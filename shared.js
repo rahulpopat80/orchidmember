@@ -186,14 +186,35 @@ const ringtone = new OrchidRingtone();
 // 3. Real-Time BroadcastChannel Synchronization
 const syncChannel = new BroadcastChannel('orchid_heights_sync');
 
+// Socket.io Setup
+let socket = null;
+const customBackendUrl = localStorage.getItem('orchid_backend_url') || 'https://orchidmember.onrender.com';
+
+if (typeof io !== 'undefined') {
+  const serverUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:3000'
+    : customBackendUrl;
+
+  console.log(`[Socket.io] Connecting to: ${serverUrl}`);
+  socket = io(serverUrl, { transports: ['websocket'] });
+}
+
 const OrchidSync = {
   channel: syncChannel,
   listeners: [],
 
-  // Send message to all tabs
+  // Send message to all tabs and remote socket
   send(type, data) {
     const message = { type, data, senderId: Math.random().toString(36).substring(7) };
+    
+    // Broadcast locally
     this.channel.postMessage(message);
+    
+    // Broadcast remotely
+    if (socket && socket.connected) {
+      socket.emit(type, data);
+    }
+    
     this.triggerListeners(type, data, message.senderId);
   },
 
@@ -216,6 +237,22 @@ syncChannel.onmessage = (event) => {
   const { type, data, senderId } = event.data;
   OrchidSync.triggerListeners(type, data, senderId);
 };
+
+// Forward remote socket events to local listeners
+if (socket) {
+  socket.on('VISITOR_REQUEST', (data) => {
+    OrchidSync.triggerListeners('VISITOR_REQUEST', data, 'socket');
+  });
+  socket.on('VISITOR_RESPONSE', (data) => {
+    OrchidSync.triggerListeners('VISITOR_RESPONSE', data, 'socket');
+  });
+  socket.on('ALARM_STOP', (data) => {
+    OrchidSync.triggerListeners('ALARM_STOP', data, 'socket');
+  });
+  socket.on('FLAT_SELECTED_BY_SECURITY', (data) => {
+    OrchidSync.triggerListeners('FLAT_SELECTED_BY_SECURITY', data, 'socket');
+  });
+}
 
 // Expose elements globally
 window.DB = DB;

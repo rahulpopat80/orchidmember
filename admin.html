@@ -100,6 +100,7 @@
         <button id="adm-tab-flats-btn" class="tab-btn" onclick="switchAdminTab('flats')">🏢 સભ્યો/ફ્લેટ્સ મેનેજર</button>
         <button id="adm-tab-excel-btn" class="tab-btn" onclick="switchAdminTab('excel')">📤 એક્સેલ અપલોડ</button>
         <button id="adm-tab-contacts-btn" class="tab-btn" onclick="switchAdminTab('contacts')">📞 સંપર્કો ડાયરેક્ટરી</button>
+        <button id="adm-tab-settings-btn" class="tab-btn" onclick="switchAdminTab('settings')">⚙️ સેટિંગ્સ</button>
       </div>
 
       <!-- TAB 1: VISITOR ACTIVITY LOGS -->
@@ -255,6 +256,25 @@
         </div>
       </div>
 
+      <!-- TAB 5: BACKEND SETTINGS -->
+      <div id="adm-tab-settings" class="adm-tab-content" style="display: none;">
+        <div class="card">
+          <h4 style="color: #fff; margin-bottom: 12px;">બેકએન્ડ સર્વર કનેક્શન (Render.com Settings)</h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+            રહેવાસીઓ અને સિક્યોરિટી ગાર્ડ વચ્ચે રિયલ-ટાઇમ રિંગટોન અને એલર્ટ્સ લિંક કરવા માટે તમારી <strong>Render.com Web Service URL</strong> અહીં પેસ્ટ કરો:
+          </p>
+
+          <div class="form-group">
+            <label class="form-label" for="settings-backend-url">Render સર્વર URL (દા.ત. https://your-app.onrender.com)</label>
+            <input type="url" id="settings-backend-url" class="form-control" placeholder="https://your-app-name.onrender.com...">
+          </div>
+
+          <button class="btn btn-primary btn-block" onclick="saveBackendUrlSettings()" style="margin-top: 10px;">
+            💾 સેવ સેટિંગ્સ
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -269,6 +289,7 @@
 
   <!-- Load SheetJS for XLS/XLSX/CSV Import support in browser client-side -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script src="shared.js"></script>
   <script>
     let isAdminAuthenticated = false;
@@ -317,6 +338,7 @@
       renderVisitorLogs();
       renderFlatsList();
       renderContactsList();
+      loadSettingsData();
     }
 
     // Tab 1: Render Logs
@@ -617,6 +639,22 @@
     window.addEventListener('storage', () => {
       loadDashboardData();
     });
+
+    function loadSettingsData() {
+      const url = localStorage.getItem('orchid_backend_url') || 'https://orchidmember.onrender.com';
+      document.getElementById('settings-backend-url').value = url;
+    }
+
+    function saveBackendUrlSettings() {
+      const url = document.getElementById('settings-backend-url').value.trim();
+      if (!url) {
+        alert('કૃપા કરીને સાચી URL દાખલ કરો.');
+        return;
+      }
+      localStorage.setItem('orchid_backend_url', url);
+      alert('સેટિંગ્સ સેવ થઈ ગઈ છે! ફેરફારો લાગુ કરવા માટે પ્લીઝ પેજ રિલોડ (Reload) કરો.');
+      window.location.reload();
+    }
 
     window.onload = () => {
       // Automatic login for testing or wait
