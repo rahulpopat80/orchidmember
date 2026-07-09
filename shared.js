@@ -192,8 +192,8 @@ let ws = null;
 const defaultBackend = 'https://orchidmember.onrender.com';
 const customBackendUrl = localStorage.getItem('orchid_backend_url') || defaultBackend;
 
-// SocketsBay public channel based on unique name
-const PUBLIC_WS_URL = 'wss://socketsbay.com/wss/v2/1/orchid_heights_society_96flats/';
+// PieSocket public channel based on unique name
+const PUBLIC_WS_URL = 'wss://demo.piesocket.com/v3/orchid_heights_society_96flats?api_key=VCXCEuvhGcBDP7XhiJJUDvR1e1D3eiVjgZ9VRiaV';
 
 function connectPublicWS() {
   console.log(`[WS] Connecting to public relay: ${PUBLIC_WS_URL}`);
