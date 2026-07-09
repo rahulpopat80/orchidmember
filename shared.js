@@ -186,33 +186,67 @@ const ringtone = new OrchidRingtone();
 // 3. Real-Time BroadcastChannel Synchronization
 const syncChannel = new BroadcastChannel('orchid_heights_sync');
 
-// Socket.io Setup
+// Socket.io & WebSocket Setup
 let socket = null;
-const customBackendUrl = localStorage.getItem('orchid_backend_url') || 'https://orchidmember.onrender.com';
+let ws = null;
+const defaultBackend = 'https://orchidmember.onrender.com';
+const customBackendUrl = localStorage.getItem('orchid_backend_url') || defaultBackend;
 
-if (typeof io !== 'undefined') {
-  const serverUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:3000'
-    : customBackendUrl;
+// SocketsBay public channel based on unique name
+const PUBLIC_WS_URL = 'wss://socketsbay.com/wss/v2/1/orchid_heights_society_96flats/';
 
+function connectPublicWS() {
+  console.log(`[WS] Connecting to public relay: ${PUBLIC_WS_URL}`);
+  ws = new WebSocket(PUBLIC_WS_URL);
+  
+  ws.onmessage = (event) => {
+    try {
+      const msg = JSON.parse(event.data);
+      if (msg && msg.type) {
+        OrchidSync.triggerListeners(msg.type, msg.data, 'ws');
+      }
+    } catch (e) {
+      // Ignored
+    }
+  };
+  
+  ws.onclose = () => {
+    console.log('[WS] Connection closed. Reconnecting in 3s...');
+    setTimeout(connectPublicWS, 3000);
+  };
+}
+
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+if (typeof io !== 'undefined' && (customBackendUrl !== defaultBackend || isLocalhost)) {
+  // Connect via Socket.io
+  const serverUrl = isLocalhost ? 'http://localhost:3000' : customBackendUrl;
   console.log(`[Socket.io] Connecting to: ${serverUrl}`);
   socket = io(serverUrl, { transports: ['websocket'] });
+} else {
+  // Connect via raw WebSocket
+  connectPublicWS();
 }
 
 const OrchidSync = {
   channel: syncChannel,
   listeners: [],
 
-  // Send message to all tabs and remote socket
+  // Send message to all tabs and remote server
   send(type, data) {
     const message = { type, data, senderId: Math.random().toString(36).substring(7) };
     
     // Broadcast locally
     this.channel.postMessage(message);
     
-    // Broadcast remotely
+    // Broadcast remotely via Socket.io
     if (socket && socket.connected) {
       socket.emit(type, data);
+    }
+    
+    // Broadcast remotely via raw WebSocket
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(message));
     }
     
     this.triggerListeners(type, data, message.senderId);
