@@ -1,6 +1,11 @@
 {
   "cleanUrls": true,
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/$1" }
+  "builds": [
+    { "src": "index.html", "use": "@vercel/static" },
+    { "src": "security.html", "use": "@vercel/static" },
+    { "src": "member.html", "use": "@vercel/static" },
+    { "src": "admin.html", "use": "@vercel/static" },
+    { "src": "app.css", "use": "@vercel/static" },
+    { "src": "shared.js", "use": "@vercel/static" }
   ]
 }
