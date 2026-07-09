@@ -1,0 +1,2 @@
+# Ignore server.js on Vercel since it is a persistent WebSocket server and cannot run in Serverless Functions
+server.js
