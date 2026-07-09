@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>એડમિન પેનલ - ઓર્કિડ હાઇટ્સ</title>
+  <link rel="stylesheet" href="app.css">
+  <style>
+    body {
+      background-color: #0b0f19;
+      padding: 16px;
+    }
+    .admin-container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    /* Photo view modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: #1e293b;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .modal-img {
+      width: 100%;
+      max-height: 350px;
+      object-fit: cover;
+      border-radius: var(--radius-sm);
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-container">
+    
+    <!-- 1. ADMIN PASSWORD GATE -->
+    <div id="admin-login" style="display: block; max-width: 400px; margin: 80px auto 0 auto;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="font-size: 3rem;">🔐</span>
+        <h2 style="color: #fff; margin-top: 10px;">એડમિન લૉગિન</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">ઓર્કિડ હાઇટ્સ સોસાયટી</p>
+      </div>
+      <div class="card">
+        <div class="form-group">
+          <label class="form-label" for="admin-pass">એડમિન પાસવર્ડ દાખલ કરો</label>
+          <input type="password" id="admin-pass" class="form-control" placeholder="પાસવર્ડ લખો...">
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">
+            ડિફોલ્ટ એડમિન પાસવર્ડ: <strong>Admin123</strong>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="loginAdmin()">🔓 પ્રવેશો</button>
+      </div>
+    </div>
+
+    <!-- 2. MAIN ADMIN DASHBOARD -->
+    <div id="admin-dashboard" style="display: none;">
+      <!-- Title -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+        <div>
+          <h2 style="color: #fff;">🔑 સોસાયટી એડમિન પેનલ</h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">ઓર્કિડ હાઇટ્સ સોસાયટી (કુલ ૯૬ બ્લોક)</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="logoutAdmin()">🚪 Logout</button>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-total-visitors">0</div>
+          <div class="stat-label">કુલ મુલાકાતીઓ</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-approved-visitors" style="color:var(--success);">0</div>
+          <div class="stat-label">મંજૂર થયેલ</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-active-flats" style="color:var(--accent);">96</div>
+          <div class="stat-label">એક્ટિવ ફ્લેટ્સ</div>
+        </div>
+      </div>
+
+      <!-- Admin Tabs Navigation -->
+      <div class="tab-nav">
+        <button id="adm-tab-logs-btn" class="tab-btn active" onclick="switchAdminTab('logs')">📋 એક્ટિવિટી લોગ</button>
+        <button id="adm-tab-flats-btn" class="tab-btn" onclick="switchAdminTab('flats')">🏢 સભ્યો/ફ્લેટ્સ મેનેજર</button>
+        <button id="adm-tab-excel-btn" class="tab-btn" onclick="switchAdminTab('excel')">📤 એક્સેલ અપલોડ</button>
+        <button id="adm-tab-contacts-btn" class="tab-btn" onclick="switchAdminTab('contacts')">📞 સંપર્કો ડાયરેક્ટરી</button>
+      </div>
+
+      <!-- TAB 1: VISITOR ACTIVITY LOGS -->
+      <div id="adm-tab-logs" class="adm-tab-content" style="display: block;">
+        <div class="card" style="padding: 16px; overflow-x: auto;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h4 style="color: #fff;">ચાલુ હલચલ રેકોર્ડ (Visitor Log)</h4>
+            <button class="btn btn-danger btn-sm" onclick="clearVisitorLogs()" style="font-size:0.75rem; padding: 4px 8px;">🗑️ લોગ સાફ કરો</button>
+          </div>
+          <table class="log-table">
+            <thead>
+              <tr>
+                <th>ફોટો</th>
+                <th>મહેમાન નામ</th>
+                <th>મોબાઇલ</th>
+                <th>ફ્લેટ નં.</th>
+                <th>પ્રકાર</th>
+                <th>સમય</th>
+                <th>સ્થિતિ</th>
+              </tr>
+            </thead>
+            <tbody id="logs-tbody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 2: FLATS MASTER AND PASSWORD RESET -->
+      <div id="adm-tab-flats" class="adm-tab-content" style="display: none;">
+        <div class="card">
+          <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+            <input type="text" id="flat-search" class="form-control" placeholder="ફ્લેટ શોધો (દા.ત. A-101)..." oninput="renderFlatsList()" style="flex: 1;">
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('flat-search').value=''; renderFlatsList();">બધા બતાવો</button>
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="log-table">
+              <thead>
+                <tr>
+                  <th>ફ્લેટ નંબર</th>
+                  <th>મુખ્ય સભ્ય નામ</th>
+                  <th>મોબાઇલ નંબર</th>
+                  <th>બીજા સભ્યો</th>
+                  <th>પાસવર્ડ સ્ટેટસ</th>
+                  <th>એક્શન</th>
+                </tr>
+              </thead>
+              <tbody id="flats-tbody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: EXCEL / CSV MOBILE LIST IMPORT -->
+      <div id="adm-tab-excel" class="adm-tab-content" style="display: none;">
+        <div class="card">
+          <h4 style="color: #fff; margin-bottom: 8px;">નવા સભ્યોના મોબાઇલ નંબરનું લિસ્ટ અપલોડ કરો</h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">
+            નવા સભ્યોના ડેટાને એક્સેલ (.xlsx, .xls) અથવા સીએસવી (.csv) ફાઇલ દ્વારા ઈમ્પોર્ટ કરો. ફાઇલ નીચે દર્શાવેલ કોલમ ફોર્મેટમાં હોવી જોઈએ:
+          </p>
+
+          <!-- Format Preview -->
+          <div style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 0.8rem; border: 1px solid var(--border-color);">
+            <strong style="color:var(--accent);">એક્સેલ/CSV ફોર્મેટ મોડેલ:</strong>
+            <table style="width: 100%; text-align: left; margin-top: 8px; border-collapse: collapse;">
+              <thead>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                  <th style="padding: 4px;">Flat (ફ્લેટ)</th>
+                  <th style="padding: 4px;">Name (નામ)</th>
+                  <th style="padding: 4px;">Mobile (મોબાઈલ)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding: 4px; color: #fff;">A-101</td>
+                  <td style="padding: 4px; color: #fff;">રમેશભાઈ પટેલ</td>
+                  <td style="padding: 4px; color: #fff;">9876543210</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px; color: #fff;">B-202</td>
+                  <td style="padding: 4px; color: #fff;">કિરણભાઈ શાહ</td>
+                  <td style="padding: 4px; color: #fff;">9012345678</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Drag and Drop Zone -->
+          <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+            <span style="font-size: 2.5rem;">📥</span>
+            <h4 style="color: #fff; margin-top: 10px;">એક્સેલ અથવા સીએસવી ફાઇલ અહીં ખેંચી લાવો અથવા ક્લિક કરો</h4>
+            <p>પોર્ટલ આપોઆપ તમામ ફ્લેટના મોબાઇલ નંબર અપડેટ કરશે.</p>
+            <input type="file" id="file-input" style="display: none;" accept=".xlsx, .xls, .csv" onchange="handleFileSelect(event)">
+          </div>
+          <div id="upload-status" style="margin-top: 12px; font-weight: 600; text-align: center; color: var(--success);"></div>
+        </div>
+      </div>
+
+      <!-- TAB 4: IMPORTANT CONTACTS DIRECTORY -->
+      <div id="adm-tab-contacts" class="adm-tab-content" style="display: none;">
+        <!-- Add Contact Form -->
+        <div class="card" style="margin-bottom: 20px;">
+          <h4 style="color: #fff; margin-bottom: 12px;">નવો અગત્યનો સંપર્ક ઉમેરો</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label" for="new-contact-cat">શ્રેણી (Category)</label>
+              <select id="new-contact-cat">
+                <option value="સીક્યોરીટી (Security)">સીક્યોરીટી (Security)</option>
+                <option value="પ્લમ્બર (Plumber)">પ્લમ્બર (Plumber)</option>
+                <option value="દુધવાળા (Milkman)">દુધવાળા (Milkman)</option>
+                <option value="રસોઇ કરવા વાળા બેન (Cook)">રસોઇ કરવા વાળા બેન (Cook)</option>
+                <option value="ગાડી સાફ કરવા વાળા (Car Cleaner)">ગાડી સાફ કરવા વાળા (Car Cleaner)</option>
+                <option value="ઇલેક્ટ્રિશિયન (Electrician)">ઇલેક્ટ્રિશિયન (Electrician)</option>
+                <option value="સફાઇ કામદાર (Sweeper/Maid)">સફાઇ કામદાર (Sweeper/Maid)</option>
+                <option value="લીફ્ટ મેન્ટેનન્શ (Lift Service)">લીફ્ટ મેન્ટેનન્શ (Lift Service)</option>
+                <option value="વાઇફાઇ સર્વિસ (Internet Service)">વાઇફાઇ સર્વિસ (Internet Service)</option>
+                <option value="સોલાર સર્વિસ (Solar Maintenance)">સોલાર સર્વિસ (Solar Maintenance)</option>
+                <option value="માળી (Gardener)">માળી (Gardener)</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label" for="new-contact-name">નામ (Name)</label>
+              <input type="text" id="new-contact-name" class="form-control" placeholder="નામ લખો...">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label" for="new-contact-mobile">મોબાઈલ નંબર (Mobile)</label>
+              <input type="tel" id="new-contact-mobile" class="form-control" placeholder="મોબાઈલ..." maxlength="10">
+            </div>
+            <div style="display: flex; align-items: flex-end;">
+              <button class="btn btn-primary btn-block" onclick="addImportantContact()" style="height: 40px;">➕ ઉમેરો</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contacts Table -->
+        <div class="card">
+          <h4 style="color: #fff; margin-bottom: 12px;">સોસાયટી હેલ્પલાઇન અને સેવા સંપર્કો</h4>
+          <table class="log-table">
+            <thead>
+              <tr>
+                <th>શ્રેણી (Category)</th>
+                <th>નામ (Name)</th>
+                <th>મોબાઇલ (Mobile)</th>
+                <th>એક્શન</th>
+              </tr>
+            </thead>
+            <tbody id="contacts-tbody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Photo Viewer Modal -->
+  <div id="photo-modal" class="modal" onclick="closePhotoModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <h4 style="color:#fff; margin-bottom:12px;">મુલાકાતીનો ફોટો</h4>
+      <img id="modal-image-preview" src="" class="modal-img" alt="Captured Visitor">
+      <button class="btn btn-secondary btn-block" onclick="closePhotoModal()">બંધ કરો</button>
+    </div>
+  </div>
+
+  <!-- Load SheetJS for XLS/XLSX/CSV Import support in browser client-side -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="shared.js"></script>
+  <script>
+    let isAdminAuthenticated = false;
+
+    // Login validation
+    function loginAdmin() {
+      const passInput = document.getElementById('admin-pass').value;
+      const actualPass = DB.getAdminPassword();
+
+      if (passInput === actualPass) {
+        isAdminAuthenticated = true;
+        document.getElementById('admin-login').style.display = 'none';
+        document.getElementById('admin-dashboard').style.display = 'block';
+        loadDashboardData();
+      } else {
+        alert('ખોટો એડમિન પાસવર્ડ!');
+      }
+    }
+
+    function logoutAdmin() {
+      isAdminAuthenticated = false;
+      document.getElementById('admin-pass').value = '';
+      document.getElementById('admin-dashboard').style.display = 'none';
+      document.getElementById('admin-login').style.display = 'block';
+    }
+
+    // Switch admin tab views
+    function switchAdminTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.adm-tab-content').forEach(content => content.style.display = 'none');
+
+      document.getElementById(`adm-tab-${tabId}-btn`).classList.add('active');
+      document.getElementById(`adm-tab-${tabId}`).style.display = 'block';
+    }
+
+    // Load Dashboard Statistics & Lists
+    function loadDashboardData() {
+      if (!isAdminAuthenticated) return;
+      
+      const visitors = DB.getVisitors();
+      
+      // Update statistics
+      document.getElementById('stat-total-visitors').textContent = visitors.length;
+      document.getElementById('stat-approved-visitors').textContent = visitors.filter(v => v.status === 'approved').length;
+      
+      renderVisitorLogs();
+      renderFlatsList();
+      renderContactsList();
+    }
+
+    // Tab 1: Render Logs
+    function renderVisitorLogs() {
+      const tbody = document.getElementById('logs-tbody');
+      const visitors = DB.getVisitors();
+      
+      tbody.innerHTML = '';
+      
+      if (visitors.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">કોઈ મુલાકાતીનો રેકોર્ડ નથી.</td></tr>';
+        return;
+      }
+
+      visitors.forEach(v => {
+        const tr = document.createElement('tr');
+        
+        const badgeClasses = {
+          approved: 'badge-approved',
+          pending: 'badge-pending',
+          declined: 'badge-declined',
+          timeout: 'badge-timeout'
+        };
+
+        const badgeLabels = {
+          approved: 'મંજૂર',
+          pending: 'વેરિટિંગ',
+          declined: 'નામંજૂર',
+          timeout: 'નો રિસ્પોન્સ'
+        };
+
+        const photoCell = v.photo 
+          ? `<img src="${v.photo}" style="width:36px; height:36px; object-fit:cover; border-radius:4px; cursor:pointer; border:1px solid rgba(255,255,255,0.1);" onclick="viewFullPhoto('${v.photo}')">`
+          : '<span style="color:var(--text-muted); font-size:0.75rem;">-</span>';
+
+        tr.innerHTML = `
+          <td>${photoCell}</td>
+          <td style="font-weight:600; color:#fff;">${v.name}</td>
+          <td>${v.mobile}</td>
+          <td style="font-weight:600; color:var(--accent);">${v.flatNo}</td>
+          <td style="font-size:0.75rem; color:var(--text-muted);">${v.visitorTypeName}</td>
+          <td style="font-size:0.75rem;">${v.date} ${v.timestamp}</td>
+          <td><span class="badge ${badgeClasses[v.status] || ''}">${badgeLabels[v.status] || v.status}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Modal Photo View
+    function viewFullPhoto(photoDataUrl) {
+      const modal = document.getElementById('photo-modal');
+      const img = document.getElementById('modal-image-preview');
+      img.src = photoDataUrl;
+      modal.style.display = 'flex';
+    }
+
+    function closePhotoModal() {
+      document.getElementById('photo-modal').style.display = 'none';
+    }
+
+    // Tab 2: Render Flats List and Reset Passwords
+    function renderFlatsList() {
+      const tbody = document.getElementById('flats-tbody');
+      const flats = DB.getFlats();
+      const searchQuery = document.getElementById('flat-search').value.trim().toUpperCase();
+      
+      tbody.innerHTML = '';
+      
+      const sortedKeys = Object.keys(flats).sort();
+      
+      let matchCount = 0;
+      sortedKeys.forEach(flatNo => {
+        const flat = flats[flatNo];
+        const primaryOwner = flat.members[0] || { name: '', mobile: '' };
+        
+        // Search filter
+        if (searchQuery && !flatNo.includes(searchQuery) && !primaryOwner.name.toUpperCase().includes(searchQuery) && !primaryOwner.mobile.includes(searchQuery)) {
+          return;
+        }
+
+        matchCount++;
+
+        const tr = document.createElement('tr');
+        const changeStatus = flat.isPasswordChanged 
+          ? '<span style="color:var(--success); font-size:0.75rem; font-weight:600;">🔒 બદલેલ (ખાનગી)</span>'
+          : '<span style="color:var(--warning); font-size:0.75rem; font-weight:600;">🔓 ડિફોલ્ટ (Admin123)</span>';
+
+        const otherMembersCount = flat.members.slice(1).filter(m => m.name !== '').length;
+
+        tr.innerHTML = `
+          <td style="font-weight:700; color:var(--accent);">${flatNo}</td>
+          <td style="color:#fff;">${primaryOwner.name || '<span style="color:var(--text-muted);">ખાલી</span>'}</td>
+          <td>${primaryOwner.mobile || '-'}</td>
+          <td style="font-size:0.75rem; color:var(--text-muted);">${otherMembersCount} સભ્યો ઉમેરેલ</td>
+          <td>${changeStatus}</td>
+          <td>
+            <button class="btn btn-secondary btn-sm" onclick="resetFlatPassword('${flatNo}')" style="font-size:0.7rem; padding: 4px 8px;">
+              🔄 રીસેટ પાસવર્ડ
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      if (matchCount === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">કોઈ સભ્ય મળ્યો નથી.</td></tr>';
+      }
+    }
+
+    // Reset member password
+    function resetFlatPassword(flatNo) {
+      if (confirm(`શું તમે ખરેખર ફ્લેટ ${flatNo} નો પાસવર્ડ ડિફોલ્ટ (Admin123) કરવા માંગો છો?`)) {
+        const flats = DB.getFlats();
+        flats[flatNo].password = 'Admin123';
+        flats[flatNo].isPasswordChanged = false;
+        DB.saveFlats(flats);
+        alert(`ફ્લેટ ${flatNo} નો પાસવર્ડ રીસેટ થઈ ગયો છે!`);
+        renderFlatsList();
+      }
+    }
+
+    // Clear all history
+    function clearVisitorLogs() {
+      if (confirm('શું તમે ખરેખર તમામ મુલાકાતીઓના હિસ્ટ્રી રેકોર્ડ ડિલીટ કરવા માંગો છો?')) {
+        DB.saveVisitors([]);
+        loadDashboardData();
+        alert('લોગ સાફ થઈ ગયા છે.');
+      }
+    }
+
+    // Tab 3: File Upload processing (SheetJS XLSX + CSV Parser)
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      processUploadFile(file);
+    }
+
+    // Setup drag and drop events
+    const dropZone = document.getElementById('drop-zone');
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = 'var(--primary)';
+    });
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+    });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+      const file = e.dataTransfer.files[0];
+      if (file) processUploadFile(file);
+    });
+
+    function processUploadFile(file) {
+      const reader = new FileReader();
+      const statusDiv = document.getElementById('upload-status');
+      
+      statusDiv.style.color = 'var(--warning)';
+      statusDiv.textContent = '⌛ ફાઇલ પ્રોસેસ થઈ રહી છે...';
+
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          
+          // Load first sheet
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          
+          // Parse JSON (assuming columns: Flat/Flat Number, Name, Mobile/Phone)
+          const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          
+          if (rows.length < 2) {
+            throw new Error('ફાઇલમાં પૂરતો ડેટા નથી.');
+          }
+
+          // Headers scan
+          const header = rows[0].map(h => String(h).toLowerCase().trim());
+          const flatIdx = header.findIndex(h => h.includes('flat') || h.includes('ફ્લેટ') || h.includes('block') || h.includes('બ્લોક'));
+          const nameIdx = header.findIndex(h => h.includes('name') || h.includes('નામ'));
+          const mobIdx = header.findIndex(h => h.includes('mobile') || h.includes('મોબાઈલ') || h.includes('phone') || h.includes('નંબર'));
+
+          if (flatIdx === -1 || nameIdx === -1 || mobIdx === -1) {
+            throw new Error('નક્કી કરેલા હેડર્સ (Flat, Name, Mobile) મળ્યા નથી. કૃપા કરીને ફોર્મેટ તપાસો.');
+          }
+
+          const flats = DB.getFlats();
+          let updateCount = 0;
+
+          for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.length === 0) continue;
+
+            let rawFlat = String(row[flatIdx] || '').trim().toUpperCase();
+            
+            // Format flat e.g. A101 -> A-101
+            if (rawFlat.match(/^[AB]\d+$/)) {
+              rawFlat = rawFlat.charAt(0) + '-' + rawFlat.substring(1);
+            }
+
+            const rawName = String(row[nameIdx] || '').trim();
+            const rawMobile = String(row[mobIdx] || '').trim();
+
+            if (flats[rawFlat]) {
+              flats[rawFlat].members[0] = {
+                name: rawName,
+                mobile: rawMobile,
+                active: true
+              };
+              updateCount++;
+            }
+          }
+
+          DB.saveFlats(flats);
+          
+          statusDiv.style.color = 'var(--success)';
+          statusDiv.textContent = `✅ સફળતાપૂર્વક અપડેટ થયું! ${updateCount} ફ્લેટના મોબાઇલ રેકોર્ડ અપલોડ કરવામાં આવ્યા.`;
+          loadDashboardData();
+
+        } catch (err) {
+          console.error(err);
+          statusDiv.style.color = 'var(--danger)';
+          statusDiv.textContent = `❌ ભૂલ: ${err.message}`;
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
+
+    // Tab 4: Important Contacts Directory Actions
+    function renderContactsList() {
+      const tbody = document.getElementById('contacts-tbody');
+      const contacts = DB.getContacts();
+      
+      tbody.innerHTML = '';
+      
+      if (contacts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:20px;">કોઈ સેવા સંપર્ક ઉમેરેલ નથી.</td></tr>';
+        return;
+      }
+
+      contacts.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="font-weight:600; color:var(--accent);">${c.category}</td>
+          <td style="color:#fff;">${c.name}</td>
+          <td>${c.mobile}</td>
+          <td>
+            <button class="btn btn-danger btn-sm" onclick="deleteContact(${c.id})" style="font-size:0.7rem; padding: 4px 8px;">
+              🗑️ કાઢી નાખો
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function addImportantContact() {
+      const cat = document.getElementById('new-contact-cat').value;
+      const name = document.getElementById('new-contact-name').value.trim();
+      const mobile = document.getElementById('new-contact-mobile').value.trim();
+
+      if (!name) {
+        alert('કૃપા કરીને સંપર્ક નામ દાખલ કરો.');
+        return;
+      }
+      if (!mobile || mobile.length < 10) {
+        alert('કૃપા કરીને ૧૦ આંકડાનો સાચો મોબાઈલ નંબર દાખલ કરો.');
+        return;
+      }
+
+      const contacts = DB.getContacts();
+      const newId = contacts.length > 0 ? Math.max(...contacts.map(c => c.id)) + 1 : 1;
+      
+      const newContact = { id: newId, category: cat, name, mobile };
+      contacts.push(newContact);
+      
+      DB.saveContacts(contacts);
+      
+      // Reset form
+      document.getElementById('new-contact-name').value = '';
+      document.getElementById('new-contact-mobile').value = '';
+      
+      loadDashboardData();
+      alert('સંપર્ક સફળતાપૂર્વક ઉમેરાઈ ગયો છે!');
+    }
+
+    function deleteContact(id) {
+      if (confirm('શું તમે આ કોન્ટેક્ટ ડિલીટ કરવા માંગો છો?')) {
+        let contacts = DB.getContacts();
+        contacts = contacts.filter(c => c.id !== id);
+        DB.saveContacts(contacts);
+        loadDashboardData();
+      }
+    }
+
+    // Synchronize storage updates across other tabs in real-time
+    window.addEventListener('storage', () => {
+      loadDashboardData();
+    });
+
+    window.onload = () => {
+      // Automatic login for testing or wait
+    };
+  </script>
+</body>
+</html>

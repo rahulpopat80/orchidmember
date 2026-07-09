@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>રહેવાસી પોર્ટલ - ઓર્કિડ હાઇટ્સ</title>
+  <link rel="stylesheet" href="app.css">
+  <style>
+    body {
+      background-color: #0d121f;
+    }
+    .member-badge {
+      background: var(--primary-light);
+      color: #818cf8;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+      border: 1px solid rgba(129, 140, 248, 0.2);
+    }
+    .history-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+    }
+    .history-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .history-photo {
+      width: 40px;
+      height: 40px;
+      border-radius: 4px;
+      object-fit: cover;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-screen">
+
+    <!-- 1. LOGIN SCREEN -->
+    <div id="login-screen" style="display: block; padding-top: 40px;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <span style="font-size: 3rem;">🏢</span>
+        <h2 style="color: #fff; margin-top: 10px;">ઓર્કિડ હાઇટ્સ</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">રહેવાસી લોગઇન પેનલ</p>
+      </div>
+
+      <div class="card">
+        <div class="form-group">
+          <label class="form-label" for="login-flat">ફ્લેટ નંબર (દા.ત. A-101)</label>
+          <input type="text" id="login-flat" class="form-control" placeholder="A-101 કે B-502..." style="text-transform: uppercase;">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="login-password">પાસવર્ડ</label>
+          <input type="password" id="login-password" class="form-control" placeholder="પાસવર્ડ લખો...">
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">
+            ડિફોલ્ટ પાસવર્ડ: <strong>Admin123</strong>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-block" onclick="handleLogin()" style="margin-top: 10px;">
+          🔑 લોગઇન કરો
+        </button>
+
+        <div id="quick-login-area" style="margin-top: 16px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
+          <button class="btn btn-secondary btn-sm" onclick="autoFillDemo()" style="font-size: 0.75rem;">
+            🤖 ઓટો ફીલ (ટેસ્ટિંગ માટે)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. CHANGE PASSWORD SCREEN (FORCE ON FIRST LOGIN) -->
+    <div id="changepassword-screen" style="display: none; padding-top: 40px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="font-size: 3rem;">🔒</span>
+        <h3 style="color: var(--danger); margin-top: 10px;">પાસવર્ડ બદલવો ફરજીયાત છે</h3>
+        <p style="color: var(--text-muted); font-size: 0.8rem; padding: 0 10px;">
+          સુરક્ષા હેતુ માટે, પ્રથમ વખત લોગઇન કરવા પર ડિફોલ્ટ પાસવર્ડ બદલવો ફરજીયાત છે.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="form-group">
+          <label class="form-label" for="new-password">નવો પાસવર્ડ (New Password)</label>
+          <input type="password" id="new-password" class="form-control" placeholder="નવો પાસવર્ડ...">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="confirm-password">નવો પાસવર્ડ ફરી દાખલ કરો</label>
+          <input type="password" id="confirm-password" class="form-control" placeholder="ફરી લખો...">
+        </div>
+
+        <button class="btn btn-success btn-block" onclick="handleChangePassword()">
+          💾 પાસવર્ડ બદલો અને સાચવો
+        </button>
+      </div>
+    </div>
+
+    <!-- 3. DASHBOARD MAIN VIEW -->
+    <div id="dashboard-view" style="display: none;">
+      <!-- Header -->
+      <div class="phone-header">
+        <div>
+          <div class="title" id="dash-title">🏢 Flat A-101</div>
+          <div class="subtitle" id="dash-member-badge">સભ્ય</div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="handleLogout()" style="padding: 4px 8px; font-size: 0.75rem;">
+          🚪 Logout
+        </button>
+      </div>
+
+      <!-- Tab Buttons -->
+      <div class="tab-nav">
+        <button id="tab-profile-btn" class="tab-btn active" onclick="switchTab('profile')">મેમ્બર પ્રોફાઇલ</button>
+        <button id="tab-history-btn" class="tab-btn" onclick="switchTab('history')">મુલાકાતીઓ</button>
+        <button id="tab-contacts-btn" class="tab-btn" onclick="switchTab('contacts')">સંપર્કો</button>
+      </div>
+
+      <!-- TAB CONTENTS: PROFILE (MEMBER MASTER) -->
+      <div id="tab-profile" class="tab-content" style="display: block;">
+        <h4 style="margin-bottom: 12px; color: #fff;">સભ્ય માસ્ટર (પરિવાર વિગત)</h4>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 16px;">
+          આ ફ્લેટમાંથી વધુમાં વધુ ૩ સભ્યો આ એપ વાપરી શકે છે. વિગતો અપડેટ કરો:
+        </p>
+
+        <div id="family-members-form">
+          <!-- Member 1 (Primary) -->
+          <div class="card" style="background: rgba(255,255,255,0.02); padding: 12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+              <strong style="font-size:0.85rem; color: var(--accent);">મુખ્ય સભ્ય (૧)</strong>
+              <span class="badge badge-approved" style="font-size: 0.6rem;">PRIMARY</span>
+            </div>
+            <div class="form-group" style="margin-bottom: 8px;">
+              <input type="text" id="member-name-0" class="form-control" placeholder="નામ..." style="padding: 6px 10px; font-size: 0.85rem;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <input type="tel" id="member-mobile-0" class="form-control" placeholder="મોબાઇલ નંબર..." style="padding: 6px 10px; font-size: 0.85rem;" maxlength="10">
+            </div>
+          </div>
+
+          <!-- Member 2 -->
+          <div class="card" style="background: rgba(255,255,255,0.02); padding: 12px;">
+            <strong style="font-size:0.85rem; color: var(--text-muted); display:block; margin-bottom: 8px;">પરિવાર સભ્ય (૨)</strong>
+            <div class="form-group" style="margin-bottom: 8px;">
+              <input type="text" id="member-name-1" class="form-control" placeholder="નામ..." style="padding: 6px 10px; font-size: 0.85rem;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <input type="tel" id="member-mobile-1" class="form-control" placeholder="મોબાઇલ નંબર..." style="padding: 6px 10px; font-size: 0.85rem;" maxlength="10">
+            </div>
+          </div>
+
+          <!-- Member 3 -->
+          <div class="card" style="background: rgba(255,255,255,0.02); padding: 12px;">
+            <strong style="font-size:0.85rem; color: var(--text-muted); display:block; margin-bottom: 8px;">પરિવાર સભ્ય (૩)</strong>
+            <div class="form-group" style="margin-bottom: 8px;">
+              <input type="text" id="member-name-2" class="form-control" placeholder="નામ..." style="padding: 6px 10px; font-size: 0.85rem;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <input type="tel" id="member-mobile-2" class="form-control" placeholder="મોબાઇલ નંબર..." style="padding: 6px 10px; font-size: 0.85rem;" maxlength="10">
+            </div>
+          </div>
+
+          <button class="btn btn-primary btn-block btn-sm" onclick="saveFamilyMembers()">
+            💾 ફેરફારો સાચવો
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB CONTENTS: VISITOR HISTORY -->
+      <div id="tab-history" class="tab-content" style="display: none;">
+        <h4 style="margin-bottom: 12px; color: #fff;">મુલાકાતીઓનો ઇતિહાસ</h4>
+        <div id="visitor-list-box">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- TAB CONTENTS: CONTACTS DIRECTORY -->
+      <div id="tab-contacts" class="tab-content" style="display: none;">
+        <h4 style="margin-bottom: 12px; color: #fff;">અગત્યના સંપર્ક નંબર</h4>
+        <div id="contacts-list-box">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. DYNAMIC RINGING INCOMING CALL MODAL -->
+    <div id="ringing-modal" class="ring-overlay" style="display: none;">
+      <div class="pulse-ring">🔔</div>
+      <div class="ring-title">નવું મહેમાન ગેટ પર છે!</div>
+      <div class="ring-subtitle">ઓર્કિડ હાઇટ્સ સિક્યોરિટી એલર્ટ</div>
+
+      <div class="visitor-card-mini">
+        <img id="ring-visitor-photo" src="" class="ring-photo" alt="Visitor Photo">
+        <h3 id="ring-visitor-name" style="color: #fff; margin-bottom: 4px;">મહેમાન</h3>
+        <p id="ring-visitor-mobile" style="color: var(--accent); font-size: 0.9rem; margin-bottom: 8px;">-</p>
+        
+        <div style="text-align: left; font-size: 0.85rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px;">
+          <div><strong>મુલાકાત હેતુ:</strong> <span id="ring-visitor-reason">-</span></div>
+          <div><strong>આવ્યા સમય:</strong> <span id="ring-visitor-time">-</span></div>
+        </div>
+      </div>
+
+      <div class="ring-actions">
+        <button class="btn btn-danger" onclick="respondToVisitor('declined')">❌ ના મંજૂર (Reject)</button>
+        <button class="btn btn-success" onclick="respondToVisitor('approved')">✅ પ્રવેશવા દો (Approve)</button>
+      </div>
+    </div>
+
+    <div class="phone-home-indicator"></div>
+  </div>
+
+  <script src="shared.js"></script>
+  <script>
+    let loggedInFlatNo = null;
+    let currentMemberIdx = 0; // Represents family member 0, 1, or 2
+    let activeIncomingRequest = null;
+
+    // Read URL params (flat and member index) for simulator auto-configuration
+    function loadUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      const urlFlat = params.get('flat');
+      const urlMemberIdx = params.get('memberIdx');
+
+      if (urlMemberIdx !== null) {
+        currentMemberIdx = parseInt(urlMemberIdx, 10);
+        document.getElementById('dash-member-badge').textContent = `પરિવાર સભ્ય ${currentMemberIdx + 1}`;
+      }
+
+      if (urlFlat) {
+        document.getElementById('login-flat').value = urlFlat;
+      }
+    }
+
+    // Auto fill default values for testing
+    function autoFillDemo() {
+      const urlFlat = new URLSearchParams(window.location.search).get('flat') || 'A-101';
+      document.getElementById('login-flat').value = urlFlat;
+      document.getElementById('login-password').value = 'Admin123';
+    }
+
+    // Handle Login
+    function handleLogin() {
+      let flatNo = document.getElementById('login-flat').value.trim().toUpperCase();
+      // Ensure dash styling in flat number
+      if (flatNo.match(/^[AB]\d+$/)) {
+        // e.g. A101 -> A-101
+        flatNo = flatNo.charAt(0) + '-' + flatNo.substring(1);
+      }
+
+      const password = document.getElementById('login-password').value;
+
+      const flats = DB.getFlats();
+      if (!flats[flatNo]) {
+        alert('આવો કોઈ ફ્લેટ સોસાયટીમાં નથી! (A-101 થી B-1204)');
+        return;
+      }
+
+      const flat = flats[flatNo];
+      if (flat.password !== password) {
+        alert('ખોટો પાસવર્ડ! કૃપા કરીને સાચો પાસવર્ડ લખો.');
+        return;
+      }
+
+      loggedInFlatNo = flatNo;
+
+      // Check if they need to change password (first time login with default password)
+      if (!flat.isPasswordChanged && password === 'Admin123') {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('changepassword-screen').style.display = 'block';
+      } else {
+        showDashboard();
+      }
+    }
+
+    // Force Password Change
+    function handleChangePassword() {
+      const newPass = document.getElementById('new-password').value.trim();
+      const confPass = document.getElementById('confirm-password').value.trim();
+
+      if (!newPass) {
+        alert('નવો પાસવર્ડ લખવો ફરજીયાત છે.');
+        return;
+      }
+      if (newPass === 'Admin123') {
+        alert('કૃપા કરીને સુરક્ષા માટે કોઈ બીજો પાસવર્ડ સેટ કરો (Admin123 સિવાય).');
+        return;
+      }
+      if (newPass !== confPass) {
+        alert('પાસવર્ડ મેળ ખાતા નથી! કૃપા કરીને બંને જગ્યાએ સરખો પાસવર્ડ લખો.');
+        return;
+      }
+
+      const flats = DB.getFlats();
+      flats[loggedInFlatNo].password = newPass;
+      flats[loggedInFlatNo].isPasswordChanged = true;
+      DB.saveFlats(flats);
+
+      alert('પાસવર્ડ સફળતાપૂર્વક બદલાઈ ગયો છે!');
+      
+      document.getElementById('changepassword-screen').style.display = 'none';
+      showDashboard();
+    }
+
+    // Dashboard navigation & UI render
+    function showDashboard() {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('changepassword-screen').style.display = 'none';
+      document.getElementById('dashboard-view').style.display = 'block';
+
+      document.getElementById('dash-title').textContent = `🏢 ફ્લેટ ${loggedInFlatNo}`;
+      
+      // Initialize view contents
+      loadProfileData();
+      loadHistoryData();
+      loadContactsData();
+    }
+
+    // Switch Tabs
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+
+      document.getElementById(`tab-${tabId}-btn`).classList.add('active');
+      document.getElementById(`tab-${tabId}`).style.display = 'block';
+    }
+
+    // Load Member Profile Master Details
+    function loadProfileData() {
+      const flats = DB.getFlats();
+      const flat = flats[loggedInFlatNo];
+      
+      for (let i = 0; i < 3; i++) {
+        const member = flat.members[i] || { name: '', mobile: '' };
+        document.getElementById(`member-name-${i}`).value = member.name || '';
+        document.getElementById(`member-mobile-${i}`).value = member.mobile || '';
+      }
+    }
+
+    // Save Profile Details
+    function saveFamilyMembers() {
+      const flats = DB.getFlats();
+      const flat = flats[loggedInFlatNo];
+
+      for (let i = 0; i < 3; i++) {
+        const name = document.getElementById(`member-name-${i}`).value.trim();
+        const mobile = document.getElementById(`member-mobile-${i}`).value.trim();
+        
+        flat.members[i] = {
+          name: name,
+          mobile: mobile,
+          active: name !== '' && mobile !== ''
+        };
+      }
+
+      DB.saveFlats(flats);
+      alert('સભ્ય માહિતી અપડેટ થઈ ગઈ છે!');
+    }
+
+    // Load Visitor Logs for this flat
+    function loadHistoryData() {
+      const visitors = DB.getVisitors();
+      const myVisitors = visitors.filter(v => v.flatNo === loggedInFlatNo);
+      const listContainer = document.getElementById('visitor-list-box');
+      
+      listContainer.innerHTML = '';
+      
+      if (myVisitors.length === 0) {
+        listContainer.innerHTML = '<p style="font-size:0.8rem; color:var(--text-muted); text-align:center; padding: 20px;">હજુ સુધી કોઈ મુલાકાતીની નોંધણી નથી.</p>';
+        return;
+      }
+
+      myVisitors.forEach(v => {
+        const card = document.createElement('div');
+        card.className = 'history-card';
+        
+        const badgeClasses = {
+          approved: 'badge-approved',
+          pending: 'badge-pending',
+          declined: 'badge-declined',
+          timeout: 'badge-timeout'
+        };
+
+        const badgeLabels = {
+          approved: 'મંજૂર',
+          pending: 'વેરિટિંગ',
+          declined: 'નામંજૂર',
+          timeout: 'નો રિસ્પોન્સ'
+        };
+
+        const imgHtml = v.photo ? `<img src="${v.photo}" class="history-photo" style="margin-right:10px;">` : '';
+
+        card.innerHTML = `
+          <div style="display:flex; align-items:center;">
+            ${imgHtml}
+            <div class="history-info">
+              <span style="font-weight:600; color:#fff;">${v.name}</span>
+              <span style="font-size:0.7rem; color:var(--text-muted);">${v.visitorTypeName} • ${v.timestamp}</span>
+            </div>
+          </div>
+          <div>
+            <span class="badge ${badgeClasses[v.status] || ''}">${badgeLabels[v.status] || v.status}</span>
+          </div>
+        `;
+        listContainer.appendChild(card);
+      });
+    }
+
+    // Load Important Contacts
+    function loadContactsData() {
+      const contacts = DB.getContacts();
+      const listContainer = document.getElementById('contacts-list-box');
+      
+      listContainer.innerHTML = '';
+      
+      // Group by Category
+      const grouped = {};
+      contacts.forEach(c => {
+        if (!grouped[c.category]) {
+          grouped[c.category] = [];
+        }
+        grouped[c.category].push(c);
+      });
+
+      Object.keys(grouped).forEach(cat => {
+        const catCard = document.createElement('div');
+        catCard.className = 'card';
+        catCard.style.padding = '12px';
+        catCard.style.marginBottom = '12px';
+        
+        let header = `<h5 style="color:var(--accent); font-size:0.85rem; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">${cat}</h5>`;
+        let listItems = '';
+        
+        grouped[cat].forEach(c => {
+          listItems += `
+            <div class="contact-item">
+              <div class="contact-info">
+                <span class="contact-name">${c.name}</span>
+              </div>
+              <a href="tel:${c.mobile}" class="contact-phone">
+                📞 ${c.mobile}
+              </a>
+            </div>
+          `;
+        });
+        
+        catCard.innerHTML = header + listItems;
+        listContainer.appendChild(catCard);
+      });
+    }
+
+    // Respond to incoming visitor alarm
+    function respondToVisitor(status) {
+      if (!activeIncomingRequest) return;
+
+      // Stop Audio Ringtone
+      ringtone.stop();
+
+      // Send Response to Security via Sync channel
+      OrchidSync.send('VISITOR_RESPONSE', {
+        id: activeIncomingRequest.id,
+        flatNo: loggedInFlatNo,
+        status: status
+      });
+
+      // Update visitor record in local storage
+      const visitors = DB.getVisitors();
+      const idx = visitors.findIndex(v => v.id === activeIncomingRequest.id);
+      if (idx !== -1) {
+        visitors[idx].status = status;
+        DB.saveVisitors(visitors);
+      }
+
+      // Hide modal
+      document.getElementById('ringing-modal').style.display = 'none';
+      activeIncomingRequest = null;
+
+      // Refresh list
+      loadHistoryData();
+    }
+
+    // Handle logout
+    function handleLogout() {
+      loggedInFlatNo = null;
+      document.getElementById('dashboard-view').style.display = 'none';
+      document.getElementById('login-screen').style.display = 'block';
+      document.getElementById('login-password').value = '';
+    }
+
+    function showIncomingAlert(data) {
+      if (activeIncomingRequest && activeIncomingRequest.id === data.id) return;
+      console.log(`[Member ${currentMemberIdx} Flat ${loggedInFlatNo}] Ringing for visitor ${data.name}!`);
+
+      // Set active request
+      activeIncomingRequest = data;
+
+      // Show Ringing Overlay Modal
+      const modal = document.getElementById('ringing-modal');
+      document.getElementById('ring-visitor-photo').src = data.photo || 'data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23333"/></svg>';
+      document.getElementById('ring-visitor-name').textContent = data.name;
+      document.getElementById('ring-visitor-mobile').textContent = `📞 ${data.mobile}`;
+      document.getElementById('ring-visitor-reason').textContent = data.reason;
+      document.getElementById('ring-visitor-time').textContent = data.timestamp;
+      
+      modal.style.display = 'flex';
+
+      // Start the loud alarm audio
+      ringtone.start();
+    }
+
+    // Listen to real-time notification alerts
+    OrchidSync.on('VISITOR_REQUEST', (data) => {
+      // Check if visitor request is for this logged in flat
+      if (!loggedInFlatNo || data.flatNo !== loggedInFlatNo) return;
+      if (data.status !== 'pending') return;
+      showIncomingAlert(data);
+    });
+
+    // Polling fallback: check for pending requests every 1 second in localStorage
+    setInterval(() => {
+      if (!loggedInFlatNo) return;
+      
+      const visitors = DB.getVisitors();
+      const pendingReq = visitors.find(v => v.flatNo === loggedInFlatNo && v.status === 'pending');
+      
+      if (pendingReq) {
+        showIncomingAlert(pendingReq);
+      } else if (activeIncomingRequest) {
+        const currentReq = visitors.find(v => v.id === activeIncomingRequest.id);
+        if (currentReq && currentReq.status !== 'pending') {
+          console.log(`[Member ${currentMemberIdx}] Active request status changed to ${currentReq.status} via polling. Stopping alarm.`);
+          ringtone.stop();
+          document.getElementById('ringing-modal').style.display = 'none';
+          activeIncomingRequest = null;
+          loadHistoryData();
+        }
+      }
+    }, 1000);
+
+    // Listen to stop signal (if other family member answers, or security timeouts)
+    OrchidSync.on('ALARM_STOP', (data) => {
+      if (!loggedInFlatNo || data.flatNo !== loggedInFlatNo) return;
+      if (activeIncomingRequest && activeIncomingRequest.id === data.id) {
+        console.log(`[Member ${currentMemberIdx} Flat ${loggedInFlatNo}] Received alarm stop signal. Closing alarm.`);
+        ringtone.stop();
+        document.getElementById('ringing-modal').style.display = 'none';
+        activeIncomingRequest = null;
+        loadHistoryData();
+      }
+    });
+
+    // Listen if someone else responded
+    OrchidSync.on('VISITOR_RESPONSE', (data) => {
+      if (!loggedInFlatNo || data.flatNo !== loggedInFlatNo) return;
+      if (activeIncomingRequest && activeIncomingRequest.id === data.id) {
+        console.log(`[Member ${currentMemberIdx}] Other member already responded. Stopping alarm.`);
+        ringtone.stop();
+        document.getElementById('ringing-modal').style.display = 'none';
+        activeIncomingRequest = null;
+        loadHistoryData();
+      }
+    });
+
+    // Listen for database shifts or simulator events
+    window.addEventListener('storage', () => {
+      if (loggedInFlatNo) {
+        loadHistoryData();
+        loadContactsData();
+        loadProfileData();
+      }
+    });
+
+    window.onload = () => {
+      loadUrlParams();
+    };
+  </script>
+</body>
+</html>

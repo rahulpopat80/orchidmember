@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>સિક્યોરિટી ગેટ પોર્ટલ - ઓર્કિડ હાઇટ્સ</title>
+  <link rel="stylesheet" href="app.css">
+  <style>
+    /* Styling overrides for mobile screen inside iframe */
+    body {
+      background-color: #0d121f;
+    }
+    .status-alert {
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      margin-top: 12px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: none;
+      animation: fadeIn 0.3s;
+    }
+    .status-alert.active {
+      display: block;
+    }
+    .status-alert.waiting {
+      background: var(--warning-light);
+      color: var(--warning);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+    .status-alert.success {
+      background: var(--success-light);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+    .status-alert.danger {
+      background: var(--danger-light);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+    .countdown-circle {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      line-height: 38px;
+      border-radius: 50%;
+      border: 2px solid var(--warning);
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-screen">
+    <!-- Header -->
+    <div class="phone-header">
+      <div>
+        <div class="title">🛡️ સિક્યોરિટી ગેટ</div>
+        <div class="subtitle">ઓર્કિડ હાઇટ્સ સોસાયટી</div>
+      </div>
+      <div style="font-size: 0.75rem; text-align: right; color: var(--text-muted);">
+        ગેટ નં. ૧
+      </div>
+    </div>
+
+    <!-- main Form -->
+    <div id="entry-form-container">
+      <div class="form-group">
+        <label class="form-label" for="flat-select">કયા ફ્લેટમાં જવું છે? (Flat Number)</label>
+        <select id="flat-select" onchange="handleFlatChange()">
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="visitor-type">મુલાકાતીનો પ્રકાર (Visitor Type)</label>
+        <select id="visitor-type" onchange="toggleFormFields()">
+          <option value="relative">સગા સબંધી (Relative)</option>
+          <option value="visitor" selected>મુલાકાતી (Visitor)</option>
+          <option value="courier">કુરીયર વાળા (Courier)</option>
+          <option value="shopping">ઓનલાઇન શોપીંગ વાળા (Shopping)</option>
+          <option value="milkman">દુધવાળા (Milkman)</option>
+          <option value="cleaner">સફાઇ વાળા (Cleaner)</option>
+        </select>
+      </div>
+
+      <!-- Conditional Fields Container -->
+      <div id="conditional-fields">
+        <div class="form-group">
+          <label class="form-label" for="visitor-name">મહેમાનનું નામ (Name)</label>
+          <input type="text" id="visitor-name" class="form-control" placeholder="નામ લખો...">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="visitor-mobile">મોબાઇલ નંબર (Mobile)</label>
+          <input type="tel" id="visitor-mobile" class="form-control" placeholder="10 આંકડાનો નંબર..." maxlength="10">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="visit-reason">મુલાકાતનું કારણ (Reason)</label>
+          <input type="text" id="visit-reason" class="form-control" placeholder="કારણ લખો... (દા.ત. ડિલિવરી)">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">મહેમાનનો ફોટો (Camera Option)</label>
+          <div class="camera-container" id="camera-box">
+            <!-- Simulated or live camera will render here -->
+            <video id="webcam" class="camera-preview" autoplay playsinline style="display: none;"></video>
+            <img id="photo-preview" class="photo-preview-img" style="display: none;">
+            <div id="camera-placeholder" class="camera-placeholder">
+              <span>📷 કેમેરા શરૂ થયો નથી</span>
+              <button class="btn btn-secondary btn-sm" onclick="startWebcam()">કેમેરા ચાલુ કરો</button>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button id="snap-btn" class="btn btn-secondary btn-block" onclick="takeSnapshot()" disabled>📸 ફોટો પાડો</button>
+            <button id="sim-photo-btn" class="btn btn-secondary btn-block" onclick="useSimulatedPhoto()">🤖 ઓટો ફોટો</button>
+          </div>
+        </div>
+      </div>
+
+      <button id="submit-btn" class="btn btn-primary btn-block" onclick="submitEntry()" style="margin-top: 20px;">
+        ✅ એન્ટ્રી મોકલો / OK
+      </button>
+    </div>
+
+    <!-- Response Waiting State -->
+    <div id="waiting-container" style="display: none; text-align: center; padding: 20px 0;">
+      <div class="card" style="background: rgba(255,255,255,0.02);">
+        <h4 style="margin-bottom: 12px; color: #fff;">મુલાકાતી વેરિફિકેશન</h4>
+        <div id="countdown-wrapper">
+          <div id="timer" class="countdown-circle">15</div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+            ફ્લેટ સભ્યોને ઘંટડી વાગી રહી છે... મંજૂરીની રાહ જુઓ.
+          </p>
+        </div>
+        
+        <!-- Live Visitor Mini Summary -->
+        <div id="waiting-visitor-summary" style="text-align: left; font-size: 0.85rem; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+          <!-- Populated in JS -->
+        </div>
+
+        <button class="btn btn-secondary btn-block" onclick="cancelVerification()">रદ કરો (Cancel)</button>
+      </div>
+    </div>
+
+    <!-- Real-time Alerts / Results -->
+    <div id="status-waiting" class="status-alert waiting">
+      ⌛ મંજૂરીની રાહ જોઈ રહ્યા છીએ...
+    </div>
+    <div id="status-approved" class="status-alert success">
+      🎉 મંજૂર (Approved)! ફ્લેટમાં પ્રવેશવા દો.
+      <button class="btn btn-success btn-block btn-sm" onclick="resetForm()" style="margin-top: 10px;">નવી એન્ટ્રી</button>
+    </div>
+    <div id="status-declined" class="status-alert danger">
+      ❌ ના મંજૂર (Declined)! પ્રવેશ આપશો નહીં.
+      <button class="btn btn-danger btn-block btn-sm" onclick="resetForm()" style="margin-top: 10px;">નવી એન્ટ્રી</button>
+    </div>
+
+    <!-- Dial-pad Fallback Container -->
+    <div id="dialpad-box" style="display: none;">
+      <div class="dialpad-container">
+        <div class="dialpad-title">⚠️ સભ્યો તરફથી કોઈ જવાબ નથી!</div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-bottom: 12px;">
+          કોઈ સભ્યએ ફોન અપ્રૂવ કર્યો નથી. કૃપા કરીને ફ્લેટ ધારકને ડાયરેક્ટ ફોન કરો:
+        </p>
+        <a id="dialpad-phone-link" href="tel:" class="dialpad-btn">
+          📞 ફોન કરો (<span id="dialpad-member-phone"></span>)
+        </a>
+        <button class="btn btn-secondary btn-sm btn-block" onclick="resetForm()" style="margin-top: 12px;">નવી એન્ટ્રી</button>
+      </div>
+    </div>
+
+    <div class="phone-home-indicator"></div>
+  </div>
+
+  <script src="shared.js"></script>
+  <script>
+    let webcamStream = null;
+    let capturedPhotoData = null;
+    let activeRequestId = null;
+    let countdownInterval = null;
+    const TIMEOUT_SECONDS = 15;
+
+    // Load flats list and group by Wings
+    function initFlatsSelect() {
+      const select = document.getElementById('flat-select');
+      const flats = DB.getFlats();
+      
+      // Clear options
+      select.innerHTML = '';
+      
+      // Create groups
+      const groupA = document.createElement('optgroup');
+      groupA.label = 'વિંગ એ (Wing A)';
+      const groupB = document.createElement('optgroup');
+      groupB.label = 'વિંગ બી (Wing B)';
+      
+      Object.keys(flats).sort().forEach(flatNo => {
+        const opt = document.createElement('option');
+        opt.value = flatNo;
+        opt.textContent = flatNo;
+        
+        if (flatNo.startsWith('A')) {
+          groupA.appendChild(opt);
+        } else {
+          groupB.appendChild(opt);
+        }
+      });
+      
+      select.appendChild(groupA);
+      select.appendChild(groupB);
+    }
+
+    // Notify simulator dashboard that flat selection changed
+    function handleFlatChange() {
+      const flatNo = document.getElementById('flat-select').value;
+      OrchidSync.send('FLAT_SELECTED_BY_SECURITY', { flatNo });
+    }
+
+    // Toggle fields based on visitor type
+    function toggleFormFields() {
+      const type = document.getElementById('visitor-type').value;
+      const condFields = document.getElementById('conditional-fields');
+      const submitBtn = document.getElementById('submit-btn');
+      
+      if (type === 'milkman' || type === 'cleaner') {
+        condFields.style.display = 'none';
+        submitBtn.textContent = '✅ ડાયરેક્ટ એન્ટ્રી મંજૂર કરો';
+      } else {
+        condFields.style.display = 'block';
+        submitBtn.textContent = '✅ એન્ટ્રી મોકલો / OK';
+      }
+    }
+
+    // Start live webcam feed
+    async function startWebcam() {
+      const video = document.getElementById('webcam');
+      const placeholder = document.getElementById('camera-placeholder');
+      const snapBtn = document.getElementById('snap-btn');
+      
+      try {
+        webcamStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+        video.srcObject = webcamStream;
+        video.style.display = 'block';
+        placeholder.style.display = 'none';
+        document.getElementById('photo-preview').style.display = 'none';
+        snapBtn.disabled = false;
+      } catch (err) {
+        console.warn('Webcam not accessible:', err);
+        alert('કૅમેરો શરૂ થઈ શક્યો નથી. કૃપા કરીને "ઓટો ફોટો" (Simulated Photo) બટનનો ઉપયોગ કરો.');
+      }
+    }
+
+    // Capture photo from webcam
+    function takeSnapshot() {
+      const video = document.getElementById('webcam');
+      const preview = document.getElementById('photo-preview');
+      const snapBtn = document.getElementById('snap-btn');
+      
+      if (!webcamStream) return;
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      capturedPhotoData = canvas.toDataURL('image/jpeg');
+      
+      preview.src = capturedPhotoData;
+      preview.style.display = 'block';
+      video.style.display = 'none';
+      
+      // Stop webcam stream
+      if (webcamStream) {
+        webcamStream.getTracks().forEach(track => track.stop());
+        webcamStream = null;
+      }
+      
+      snapBtn.disabled = true;
+      document.getElementById('camera-placeholder').style.display = 'none';
+    }
+
+    // Simulated Photo fallback: Draw a nice visitor silhouette on canvas
+    function useSimulatedPhoto() {
+      const preview = document.getElementById('photo-preview');
+      const video = document.getElementById('webcam');
+      const snapBtn = document.getElementById('snap-btn');
+      const placeholder = document.getElementById('camera-placeholder');
+      
+      // Stop webcam stream if running
+      if (webcamStream) {
+        webcamStream.getTracks().forEach(track => track.stop());
+        webcamStream = null;
+      }
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = 300;
+      canvas.height = 300;
+      const ctx = canvas.getContext('2d');
+      
+      // Draw background avatar gradient
+      const grad = ctx.createRadialGradient(150, 150, 10, 150, 150, 150);
+      grad.addColorStop(0, '#1e293b');
+      grad.addColorStop(1, '#0f172a');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 300, 300);
+      
+      // Draw simulated camera capture elements
+      ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(20, 20, 260, 260);
+      
+      // Draw avatar face silhouette
+      ctx.fillStyle = '#64748b';
+      // Head
+      ctx.beginPath();
+      ctx.arc(150, 110, 45, 0, Math.PI * 2);
+      ctx.fill();
+      // Body
+      ctx.beginPath();
+      ctx.ellipse(150, 220, 75, 55, 0, 0, Math.PI, true);
+      ctx.fill();
+      
+      // Text "SIMULATED VISIT PHOTO"
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.font = 'bold 12px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText('CAMERA CAPTURED', 150, 265);
+      
+      capturedPhotoData = canvas.toDataURL('image/jpeg');
+      
+      preview.src = capturedPhotoData;
+      preview.style.display = 'block';
+      video.style.display = 'none';
+      placeholder.style.display = 'none';
+      snapBtn.disabled = true;
+    }
+
+    // Submit request
+    function submitEntry() {
+      const flatNo = document.getElementById('flat-select').value;
+      const type = document.getElementById('visitor-type').value;
+      
+      const visitorTypeNames = {
+        visitor: 'મુલાકાતી (Visitor)',
+        relative: 'સગા સબંધી (Relative)',
+        milkman: 'દુધવાળા (Milkman)',
+        cleaner: 'સફાઇ વાળા (Cleaner)',
+        courier: 'કુરીયર વાળા (Courier)',
+        shopping: 'ઓનલાઇન શોપીંગ વાળા (Shopping)'
+      };
+
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('gu-IN', { hour: '2-digit', minute: '2-digit' });
+      
+      const newVisitor = {
+        id: 'req_' + Math.random().toString(36).substring(2, 9),
+        flatNo: flatNo,
+        visitorType: type,
+        visitorTypeName: visitorTypeNames[type],
+        timestamp: timeStr,
+        date: now.toLocaleDateString('gu-IN'),
+        status: 'pending'
+      };
+
+      if (type === 'milkman' || type === 'cleaner') {
+        // Direct Entry
+        newVisitor.name = visitorTypeNames[type];
+        newVisitor.mobile = '-';
+        newVisitor.photo = '';
+        newVisitor.reason = 'દૈનિક સેવા (Daily Service)';
+        newVisitor.status = 'approved';
+        
+        DB.addVisitor(newVisitor);
+        
+        // Show immediate approved alert
+        document.getElementById('entry-form-container').style.display = 'none';
+        document.getElementById('status-approved').style.display = 'block';
+        return;
+      }
+
+      // Validate mandatory fields for others
+      const name = document.getElementById('visitor-name').value.trim();
+      const mobile = document.getElementById('visitor-mobile').value.trim();
+      const reason = document.getElementById('visit-reason').value.trim();
+
+      if (!name) {
+        alert('કૃપા કરીને મહેમાનનું નામ દાખલ કરો.');
+        return;
+      }
+      if (!mobile || mobile.length < 10) {
+        alert('કૃપા કરીને ૧૦ આંકડાનો સાચો મોબાઇલ નંબર દાખલ કરો.');
+        return;
+      }
+      if (!capturedPhotoData) {
+        alert('કૃપા કરીને મુલાકાતીનો ફોટો પાડો.');
+        return;
+      }
+
+      newVisitor.name = name;
+      newVisitor.mobile = mobile;
+      newVisitor.photo = capturedPhotoData;
+      newVisitor.reason = reason || 'મુલાકાત';
+
+      // Save to active request state
+      activeRequestId = newVisitor.id;
+      
+      // Update waiting UI
+      document.getElementById('entry-form-container').style.display = 'none';
+      document.getElementById('waiting-container').style.display = 'block';
+      document.getElementById('status-waiting').style.display = 'block';
+      
+      document.getElementById('waiting-visitor-summary').innerHTML = `
+        <strong>ફ્લેટ:</strong> ${flatNo}<br>
+        <strong>મહેમાન:</strong> ${name}<br>
+        <strong>ફોન:</strong> ${mobile}<br>
+        <strong>સમય:</strong> ${newVisitor.timestamp}
+      `;
+
+      // Save to localStorage as pending
+      DB.addVisitor(newVisitor);
+
+      // Send via BroadcastChannel to Member phones
+      OrchidSync.send('VISITOR_REQUEST', newVisitor);
+
+      // Start Countdown
+      startCountdown(newVisitor.id, flatNo);
+    }
+
+    // Countdown Timer logic
+    function startCountdown(reqId, flatNo) {
+      let secondsLeft = TIMEOUT_SECONDS;
+      const timerDisplay = document.getElementById('timer');
+      timerDisplay.textContent = secondsLeft;
+
+      if (countdownInterval) clearInterval(countdownInterval);
+
+      countdownInterval = setInterval(() => {
+        secondsLeft--;
+        timerDisplay.textContent = secondsLeft;
+
+        if (secondsLeft <= 0) {
+          clearInterval(countdownInterval);
+          handleTimeout(reqId, flatNo);
+        }
+      }, 1000);
+    }
+
+    // Timeout scenario: Dial Primary flat owner number directly
+    function handleTimeout(reqId, flatNo) {
+      if (activeRequestId !== reqId) return;
+
+      console.log(`[Security] Timeout! Fetching member number for flat: ${flatNo}`);
+      
+      // Set visitor status in DB as timeout
+      updateVisitorStatus(reqId, 'timeout');
+
+      // Send cancel signal to stop ringtones
+      OrchidSync.send('ALARM_STOP', { id: reqId, flatNo });
+
+      // Fetch primary flat member number
+      const flats = DB.getFlats();
+      const flat = flats[flatNo];
+      const primaryMember = flat.members[0];
+      const phoneNum = primaryMember ? primaryMember.mobile : '';
+
+      // UI changes
+      document.getElementById('waiting-container').style.display = 'none';
+      document.getElementById('status-waiting').style.display = 'none';
+      
+      const dialpadBox = document.getElementById('dialpad-box');
+      document.getElementById('dialpad-member-phone').textContent = primaryMember.name ? `${primaryMember.name} - ${phoneNum}` : phoneNum;
+      document.getElementById('dialpad-phone-link').href = `tel:${phoneNum}`;
+      dialpadBox.style.display = 'block';
+    }
+
+    // Update status in localStorage
+    function updateVisitorStatus(reqId, newStatus) {
+      const visitors = DB.getVisitors();
+      const idx = visitors.findIndex(v => v.id === reqId);
+      if (idx !== -1) {
+        visitors[idx].status = newStatus;
+        DB.saveVisitors(visitors);
+      }
+    }
+
+    // Handle Cancel button clicked by security guard
+    function cancelVerification() {
+      if (countdownInterval) clearInterval(countdownInterval);
+      
+      if (activeRequestId) {
+        updateVisitorStatus(activeRequestId, 'timeout');
+        const flatNo = document.getElementById('flat-select').value;
+        OrchidSync.send('ALARM_STOP', { id: activeRequestId, flatNo });
+      }
+
+      resetForm();
+    }
+
+    // Reset Form
+    function resetForm() {
+      if (countdownInterval) clearInterval(countdownInterval);
+      activeRequestId = null;
+      capturedPhotoData = null;
+      
+      // Stop webcam stream if running
+      if (webcamStream) {
+        webcamStream.getTracks().forEach(track => track.stop());
+        webcamStream = null;
+      }
+
+      // Reset fields
+      document.getElementById('visitor-name').value = '';
+      document.getElementById('visitor-mobile').value = '';
+      document.getElementById('visit-reason').value = '';
+      
+      const photoPreview = document.getElementById('photo-preview');
+      photoPreview.src = '';
+      photoPreview.style.display = 'none';
+      
+      document.getElementById('webcam').style.display = 'none';
+      document.getElementById('camera-placeholder').style.display = 'flex';
+      document.getElementById('snap-btn').disabled = true;
+
+      // Show/Hide divs
+      document.getElementById('entry-form-container').style.display = 'block';
+      document.getElementById('waiting-container').style.display = 'none';
+      document.getElementById('dialpad-box').style.display = 'none';
+      
+      // Alerts
+      document.getElementById('status-waiting').style.display = 'none';
+      document.getElementById('status-approved').style.display = 'none';
+      document.getElementById('status-declined').style.display = 'none';
+    }
+
+    // Receive approval/decline status in real-time from Flat Members
+    OrchidSync.on('VISITOR_RESPONSE', (data) => {
+      if (data.id !== activeRequestId) return; // ignore if not active
+
+      if (countdownInterval) clearInterval(countdownInterval);
+      
+      document.getElementById('waiting-container').style.display = 'none';
+      document.getElementById('status-waiting').style.display = 'none';
+
+      if (data.status === 'approved') {
+        document.getElementById('status-approved').style.display = 'block';
+      } else if (data.status === 'declined') {
+        document.getElementById('status-declined').style.display = 'block';
+      }
+    });
+
+    // Polling fallback: check active request status changes every 1 second in localStorage
+    setInterval(() => {
+      if (!activeRequestId) return;
+      
+      const visitors = DB.getVisitors();
+      const currentReq = visitors.find(v => v.id === activeRequestId);
+      
+      if (currentReq && currentReq.status !== 'pending') {
+        if (countdownInterval) clearInterval(countdownInterval);
+        
+        if (currentReq.status === 'approved') {
+          document.getElementById('waiting-container').style.display = 'none';
+          document.getElementById('status-waiting').style.display = 'none';
+          document.getElementById('status-approved').style.display = 'block';
+        } else if (currentReq.status === 'declined') {
+          document.getElementById('waiting-container').style.display = 'none';
+          document.getElementById('status-waiting').style.display = 'none';
+          document.getElementById('status-declined').style.display = 'block';
+        } else if (currentReq.status === 'timeout') {
+          // If timeout, display the dialpad link
+          const flatNo = currentReq.flatNo;
+          const flats = DB.getFlats();
+          const flat = flats[flatNo];
+          const primaryMember = flat.members[0];
+          const phoneNum = primaryMember ? primaryMember.mobile : '';
+
+          document.getElementById('waiting-container').style.display = 'none';
+          document.getElementById('status-waiting').style.display = 'none';
+          
+          const dialpadBox = document.getElementById('dialpad-box');
+          document.getElementById('dialpad-member-phone').textContent = primaryMember.name ? `${primaryMember.name} - ${phoneNum}` : phoneNum;
+          document.getElementById('dialpad-phone-link').href = `tel:${phoneNum}`;
+          dialpadBox.style.display = 'block';
+        }
+      }
+    }, 1000);
+
+    // Initialize Page
+    window.onload = () => {
+      initFlatsSelect();
+      toggleFormFields();
+      
+      // Listen to admin actions (like DB clears/resets) to refresh flat list
+      window.addEventListener('storage', () => {
+        initFlatsSelect();
+      });
+    };
+  </script>
+</body>
+</html>

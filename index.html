@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ઓર્કિડ હાઇટ્સ સોસાયટી - વિઝિટર મેનેજમેન્ટ સિમ્યુલેટર</title>
+  <link rel="stylesheet" href="app.css">
+  <style>
+    /* Dashboard specific layout */
+    .dashboard-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    .simulator-body {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      background-color: #080b11;
+    }
+    .devices-wrapper {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 16px;
+    }
+    .device-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .device-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: rgba(6, 182, 212, 0.1);
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(6, 182, 212, 0.2);
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #0d121f;
+    }
+    .quick-links {
+      display: flex;
+      gap: 10px;
+    }
+    .admin-desktop-box {
+      width: 100%;
+      max-width: 1165px;
+      height: 550px;
+      background: #1e293b;
+      border: 10px solid #0f172a;
+      border-radius: 24px;
+      overflow: hidden;
+      margin: 20px auto 40px auto;
+      box-shadow: var(--shadow-lg);
+    }
+    .admin-title-bar {
+      background: #0f172a;
+      padding: 8px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #9ca3af;
+      font-size: 0.8rem;
+    }
+    .admin-dots {
+      display: flex;
+      gap: 6px;
+    }
+    .admin-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #f59e0b; }
+    .dot-green { background: #10b981; }
+    .sim-guide {
+      max-width: 1165px;
+      margin: 0 auto 20px auto;
+      background: rgba(79, 70, 229, 0.1);
+      border: 1px solid rgba(79, 70, 229, 0.2);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      font-size: 0.9rem;
+    }
+    .sim-guide h4 {
+      color: #818cf8;
+      margin-bottom: 6px;
+    }
+    .sim-guide ul {
+      margin-left: 20px;
+      color: var(--text-muted);
+    }
+    .sim-guide li {
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Simulator Header -->
+    <header class="sim-header">
+      <div class="sim-logo">
+        ઓર્કિડ હાઇટ્સ સોસાયટી <span>સિમ્યુલેટર ડેશબોર્ડ</span>
+      </div>
+      <div class="quick-links">
+        <a href="security.html" target="_blank" class="btn btn-secondary btn-sm">સિક્યોરિટી પોર્ટલ ↗</a>
+        <a href="member.html" target="_blank" class="btn btn-secondary btn-sm">મેમ્બર પોર્ટલ ↗</a>
+        <a href="admin.html" target="_blank" class="btn btn-secondary btn-sm">એડમિન પેનલ ↗</a>
+      </div>
+    </header>
+
+    <!-- Simulator Body -->
+    <main class="simulator-body">
+      <!-- Simulator Guidance -->
+      <div class="sim-guide">
+        <h4>💡 ટેસ્ટિંગ ગાઈડલાઈન (સિમ્યુલેટર કેવી રીતે કામ કરે છે?):</h4>
+        <ul>
+          <li><strong>સ્ટેપ ૧:</strong> ડાબી બાજુના <strong>સિક્યોરિટી ફોન</strong>માં મુલાકાતીની વિગતો ભરો (દા.ત. ફ્લેટ <strong>A-101</strong> સિલેક્ટ કરો, નામ લખો અને ફોન નંબર દાખલ કરો).</li>
+          <li><strong>સ્ટેપ ૨:</strong> "એન્ટ્રી મોકલો" બટન દબાવો. સિમ્યુલેટર આપમેળે બાજુના ત્રણેય મેમ્બર ફોન <strong>A-101</strong> પર સ્વિચ કરશે.</li>
+          <li><strong>સ્ટેપ ૩:</strong> ત્રણેય મેમ્બર ફોનમાં <strong>મોટેથી ઘંટડી (Ringtone)</strong> વાગશે અને <strong>પોપ-અપ એલર્ટ</strong> દેખાશે.</li>
+          <li><strong>સ્ટેપ ૪:</strong> ત્રણેયમાંથી કોઈપણ એક ફોનમાં <strong>"મંજૂર કરો (Approve)"</strong> કે <strong>"ના મંજૂર (Decline)"</strong> બટન દબાવો. ઘંટડી આપોઆપ ત્રણેય ફોનમાં બંધ થઈ જશે.</li>
+          <li><strong>સ્ટેપ ૫:</strong> જો ૧૫ સેકન્ડ સુધી કોઈ મંજૂરી નહીં આપે, તો સિક્યોરિટી સ્ક્રીન પર આપમેળે મેમ્બરનો મોબાઈલ નંબર ડાયલપેડ સાથે ડિસ્પ્લે થશે.</li>
+        </ul>
+      </div>
+
+      <!-- Mobile Device Simulator Grid -->
+      <div class="devices-wrapper">
+        <!-- Security Mobile Mockup -->
+        <div class="device-box">
+          <div class="device-title">સિક્યોરિટી ગાર્ડ ફોન</div>
+          <div class="phone-mockup">
+            <iframe id="security-frame" src="security.html"></iframe>
+            <div class="phone-home-indicator"></div>
+          </div>
+        </div>
+
+        <!-- Member Mobile 1 Mockup -->
+        <div class="device-box">
+          <div class="device-title">મેમ્બર ફોન ૧ (મુખ્ય સભ્ય)</div>
+          <div class="phone-mockup">
+            <iframe id="member-frame-0" src="member.html?memberIdx=0&flat=A-101"></iframe>
+            <div class="phone-home-indicator"></div>
+          </div>
+        </div>
+
+        <!-- Member Mobile 2 Mockup -->
+        <div class="device-box">
+          <div class="device-title">મેમ્બર ફોન ૨ (પરિવાર સભ્ય ૧)</div>
+          <div class="phone-mockup">
+            <iframe id="member-frame-1" src="member.html?memberIdx=1&flat=A-101"></iframe>
+            <div class="phone-home-indicator"></div>
+          </div>
+        </div>
+
+        <!-- Member Mobile 3 Mockup -->
+        <div class="device-box">
+          <div class="device-title">મેમ્બર ફોન ૩ (પરિવાર સભ્ય ૨)</div>
+          <div class="phone-mockup">
+            <iframe id="member-frame-2" src="member.html?memberIdx=2&flat=A-101"></iframe>
+            <div class="phone-home-indicator"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Desktop Mockup -->
+      <div class="device-box" style="margin-top: 40px;">
+        <div class="device-title">સોસાયટી એડમિન કંટ્રોલ ડેસ્ક (મોનિટર અને કંટ્રોલ પેનલ)</div>
+        <div class="admin-desktop-box">
+          <div class="admin-title-bar">
+            <div class="admin-dots">
+              <span class="admin-dot dot-red"></span>
+              <span class="admin-dot dot-yellow"></span>
+              <span class="admin-dot dot-green"></span>
+            </div>
+            <div>ઓર્કિડ હાઇટ્સ - એડમિન પેનલ (ડેસ્કટોપ મોડ)</div>
+            <div>https://admin.orchidheights.local</div>
+          </div>
+          <iframe id="admin-frame" src="admin.html"></iframe>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="shared.js"></script>
+  <script>
+    // Listen to the sync channel.
+    // If Security Guard starts a verification for a specific flat, 
+    // automatically sync/reload the Member iframes to represent that flat 
+    // so the simulator user doesn't have to manually log in all three phones!
+    OrchidSync.on('VISITOR_REQUEST', (data) => {
+      const flatNo = data.flatNo;
+      console.log(`[Simulator Dashboard] Syncing Member views to Flat: ${flatNo}`);
+      
+      // Update each member frame's src if it's not already showing that flat
+      for (let i = 0; i < 3; i++) {
+        const frame = document.getElementById(`member-frame-${i}`);
+        const currentUrl = new URL(frame.src);
+        
+        if (currentUrl.searchParams.get('flat') !== flatNo) {
+          currentUrl.searchParams.set('flat', flatNo);
+          frame.src = currentUrl.toString();
+        }
+      }
+    });
+
+    // Also listen for flat sync requests from the security guard selection
+    OrchidSync.on('FLAT_SELECTED_BY_SECURITY', (data) => {
+      const flatNo = data.flatNo;
+      for (let i = 0; i < 3; i++) {
+        const frame = document.getElementById(`member-frame-${i}`);
+        const currentUrl = new URL(frame.src);
+        if (currentUrl.searchParams.get('flat') !== flatNo) {
+          currentUrl.searchParams.set('flat', flatNo);
+          frame.src = currentUrl.toString();
+        }
+      }
+    });
+  </script>
+</body>
+</html>
