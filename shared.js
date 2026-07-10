@@ -120,15 +120,15 @@ class OrchidRingtone {
         this.modulator = this.audioCtx.createOscillator();
         const modGain = this.audioCtx.createGain();
 
-        // Phone ring effect frequencies (440Hz + 480Hz warble)
-        this.osc1.type = 'sine';
-        this.osc1.frequency.setValueAtTime(440, this.audioCtx.currentTime);
+        // High-pitched warning ringtone (Triangle + Sine for dissonant piercing alert)
+        this.osc1.type = 'triangle';
+        this.osc1.frequency.setValueAtTime(587.33, this.audioCtx.currentTime); // D5
 
         this.osc2.type = 'sine';
-        this.osc2.frequency.setValueAtTime(480, this.audioCtx.currentTime);
+        this.osc2.frequency.setValueAtTime(659.25, this.audioCtx.currentTime); // E5
 
-        this.modulator.frequency.value = 20; // 20Hz warbling speed
-        modGain.gain.value = 25; // depth
+        this.modulator.frequency.value = 15; // 15Hz warble speed
+        modGain.gain.value = 35; // depth
 
         // Connections
         this.modulator.connect(modGain);
@@ -139,10 +139,10 @@ class OrchidRingtone {
         this.osc2.connect(this.gainNode);
         this.gainNode.connect(this.audioCtx.destination);
 
-        // Volume Envelope (loud ring)
+        // Volume Envelope (maximum volume: 1.0)
         this.gainNode.gain.setValueAtTime(0, this.audioCtx.currentTime);
-        this.gainNode.gain.linearRampToValueAtTime(0.5, this.audioCtx.currentTime + 0.05);
-        this.gainNode.gain.setValueAtTime(0.5, this.audioCtx.currentTime + 1.2);
+        this.gainNode.gain.linearRampToValueAtTime(1.0, this.audioCtx.currentTime + 0.05);
+        this.gainNode.gain.setValueAtTime(1.0, this.audioCtx.currentTime + 1.2);
         this.gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 1.5);
 
         // Start playing

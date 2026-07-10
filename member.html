@@ -54,9 +54,20 @@
       </div>
 
       <div class="card">
-        <div class="form-group">
-          <label class="form-label" for="login-flat">ફ્લેટ નંબર (દા.ત. A-101)</label>
-          <input type="text" id="login-flat" class="form-control" placeholder="A-101 કે B-502..." style="text-transform: uppercase;">
+        <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+          <div class="form-group" style="flex: 1; margin-bottom: 0;">
+            <label class="form-label" for="login-wing">વિંગ (Wing)</label>
+            <select id="login-wing">
+              <option value="A" selected>વિંગ એ (A)</option>
+              <option value="B">વિંગ બી (B)</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex: 2; margin-bottom: 0;">
+            <label class="form-label" for="login-flat-no">ફ્લેટ નંબર (Flat No.)</label>
+            <select id="login-flat-no">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
         </div>
 
         <div class="form-group">
@@ -226,8 +237,32 @@
     let currentMemberIdx = 0; // Represents family member 0, 1, or 2
     let activeIncomingRequest = null;
 
+    // Helper to get combined flat number
+    function getSelectedFlatNo() {
+      const wing = document.getElementById('login-wing').value;
+      const flatNoVal = document.getElementById('login-flat-no').value;
+      return `${wing}-${flatNoVal}`;
+    }
+
+    // Populate flat number dropdown on load
+    function initLoginFlatsSelect() {
+      const select = document.getElementById('login-flat-no');
+      select.innerHTML = '';
+      for (let floor = 1; floor <= 12; floor++) {
+        for (let block = 1; block <= 4; block++) {
+          const num = floor * 100 + block;
+          const opt = document.createElement('option');
+          opt.value = num;
+          opt.textContent = num;
+          select.appendChild(opt);
+        }
+      }
+    }
+
     // Read URL params (flat and member index) for simulator auto-configuration
     function loadUrlParams() {
+      initLoginFlatsSelect();
+      
       const params = new URLSearchParams(window.location.search);
       const urlFlat = params.get('flat');
       const urlMemberIdx = params.get('memberIdx');
@@ -238,26 +273,28 @@
       }
 
       if (urlFlat) {
-        document.getElementById('login-flat').value = urlFlat;
+        const parts = urlFlat.split('-');
+        if (parts.length === 2) {
+          document.getElementById('login-wing').value = parts[0];
+          document.getElementById('login-flat-no').value = parts[1];
+        }
       }
     }
 
     // Auto fill default values for testing
     function autoFillDemo() {
       const urlFlat = new URLSearchParams(window.location.search).get('flat') || 'A-101';
-      document.getElementById('login-flat').value = urlFlat;
+      const parts = urlFlat.split('-');
+      if (parts.length === 2) {
+        document.getElementById('login-wing').value = parts[0];
+        document.getElementById('login-flat-no').value = parts[1];
+      }
       document.getElementById('login-password').value = 'Admin123';
     }
 
     // Handle Login
     function handleLogin() {
-      let flatNo = document.getElementById('login-flat').value.trim().toUpperCase();
-      // Ensure dash styling in flat number
-      if (flatNo.match(/^[AB]\d+$/)) {
-        // e.g. A101 -> A-101
-        flatNo = flatNo.charAt(0) + '-' + flatNo.substring(1);
-      }
-
+      const flatNo = getSelectedFlatNo();
       const password = document.getElementById('login-password').value;
 
       const flats = DB.getFlats();
@@ -459,12 +496,26 @@
       });
     }
 
+    // Helper to stop ringtone and mobile vibration in sync
+    function stopIncomingAlert() {
+      ringtone.stop();
+      if (navigator.vibrate) {
+        navigator.vibrate(0);
+      }
+      if (window.vibeInterval) {
+        clearInterval(window.vibeInterval);
+        window.vibeInterval = null;
+      }
+      document.getElementById('ringing-modal').style.display = 'none';
+      activeIncomingRequest = null;
+    }
+
     // Respond to incoming visitor alarm
     function respondToVisitor(status) {
       if (!activeIncomingRequest) return;
 
-      // Stop Audio Ringtone
-      ringtone.stop();
+      // Stop Audio Ringtone & Vibration
+      stopIncomingAlert();
 
       // Send Response to Security via Sync channel
       OrchidSync.send('VISITOR_RESPONSE', {
@@ -480,10 +531,6 @@
         visitors[idx].status = status;
         DB.saveVisitors(visitors);
       }
-
-      // Hide modal
-      document.getElementById('ringing-modal').style.display = 'none';
-      activeIncomingRequest = null;
 
       // Refresh list
       loadHistoryData();
@@ -516,6 +563,19 @@
 
       // Start the loud alarm audio
       ringtone.start();
+
+      // Start phone vibration pattern
+      if (navigator.vibrate) {
+        navigator.vibrate([500, 300, 500, 300, 500]);
+        if (window.vibeInterval) clearInterval(window.vibeInterval);
+        window.vibeInterval = setInterval(() => {
+          if (activeIncomingRequest) {
+            navigator.vibrate([500, 300, 500, 300, 500]);
+          } else {
+            clearInterval(window.vibeInterval);
+          }
+        }, 2000);
+      }
     }
 
     // Listen to real-time notification alerts
@@ -539,9 +599,7 @@
         const currentReq = visitors.find(v => v.id === activeIncomingRequest.id);
         if (currentReq && currentReq.status !== 'pending') {
           console.log(`[Member ${currentMemberIdx}] Active request status changed to ${currentReq.status} via polling. Stopping alarm.`);
-          ringtone.stop();
-          document.getElementById('ringing-modal').style.display = 'none';
-          activeIncomingRequest = null;
+          stopIncomingAlert();
           loadHistoryData();
         }
       }
@@ -552,9 +610,7 @@
       if (!loggedInFlatNo || data.flatNo !== loggedInFlatNo) return;
       if (activeIncomingRequest && activeIncomingRequest.id === data.id) {
         console.log(`[Member ${currentMemberIdx} Flat ${loggedInFlatNo}] Received alarm stop signal. Closing alarm.`);
-        ringtone.stop();
-        document.getElementById('ringing-modal').style.display = 'none';
-        activeIncomingRequest = null;
+        stopIncomingAlert();
         loadHistoryData();
       }
     });
@@ -564,9 +620,7 @@
       if (!loggedInFlatNo || data.flatNo !== loggedInFlatNo) return;
       if (activeIncomingRequest && activeIncomingRequest.id === data.id) {
         console.log(`[Member ${currentMemberIdx}] Other member already responded. Stopping alarm.`);
-        ringtone.stop();
-        document.getElementById('ringing-modal').style.display = 'none';
-        activeIncomingRequest = null;
+        stopIncomingAlert();
         loadHistoryData();
       }
     });

@@ -3,54 +3,273 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ઓર્કિડ હાઇટ્સ સોસાયટી - વિઝિટર મેનેજમેન્ટ સિમ્યુલેટર</title>
+  <title>ઓર્કિડ હાઇટ્સ સોસાયટી - સ્માર્ટ ગેટ પોર્ટલ</title>
   <link rel="stylesheet" href="app.css">
   <style>
-    /* Dashboard specific layout */
-    .dashboard-container {
+    /* Styling for Unified Home Portal */
+    body, html {
+      height: 100%;
+      overflow: hidden;
+      background-color: #0b0f19;
+    }
+    .main-wrapper {
+      height: 100%;
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      position: relative;
     }
-    .simulator-body {
+    /* Mode Toggle Switch Header */
+    .app-header {
+      background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+    }
+    .app-title-logo {
+      font-weight: 700;
+      font-size: 1.2rem;
+      background: linear-gradient(to right, #818cf8, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    /* Toggle Switch Style */
+    .switch-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 22px;
+    }
+    .switch input { 
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #334155;
+      transition: .4s;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .slider::before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: var(--primary);
+    }
+    input:checked + .slider::before {
+      transform: translateX(22px);
+    }
+
+    /* Production Landing Screen Layout */
+    .landing-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: radial-gradient(circle at top, #1e1b4b 0%, #080b11 70%);
+      overflow-y: auto;
+      z-index: 10;
+    }
+    .welcome-container {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .welcome-icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      display: inline-block;
+      animation: bounce 2s infinite;
+    }
+    .welcome-container h2 {
+      font-size: 1.8rem;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .welcome-container p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    .role-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      width: 100%;
+      max-width: 420px;
+    }
+    .role-card {
+      background: rgba(22, 30, 49, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .role-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to right, rgba(79, 70, 229, 0.1), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .role-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(79, 70, 229, 0.4);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4), 0 0 15px rgba(79, 70, 229, 0.15);
+    }
+    .role-card:hover::after {
+      opacity: 1;
+    }
+    .role-card-icon {
+      font-size: 2.2rem;
+      background: rgba(255, 255, 255, 0.05);
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .role-card-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .role-card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .role-card-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .role-arrow {
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      transition: transform 0.2s;
+    }
+    .role-card:hover .role-arrow {
+      transform: translateX(4px);
+      color: #fff;
+    }
+
+    /* Production Viewport Wrapper */
+    .portal-viewport {
+      display: none;
+      position: absolute;
+      top: 48px; /* space for header */
+      left: 0;
+      width: 100%;
+      height: calc(100% - 48px);
+      background: #0d121f;
+      z-index: 50;
+    }
+    .portal-iframe-wrapper {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .floating-back-btn {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      z-index: 200;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: var(--shadow-sm);
+    }
+    .floating-back-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Simulator Mode Layout Override */
+    .simulator-dashboard {
+      display: none;
       flex: 1;
       padding: 16px;
       overflow-y: auto;
       background-color: #080b11;
     }
-    .devices-wrapper {
+    .sim-devices-wrapper {
       display: flex;
       flex-wrap: wrap;
       gap: 20px;
       justify-content: center;
       margin-top: 16px;
     }
-    .device-box {
+    .sim-device-box {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
-    .device-title {
-      font-size: 0.9rem;
+    .sim-device-title {
+      font-size: 0.85rem;
       font-weight: 600;
       color: var(--accent);
       background: rgba(6, 182, 212, 0.1);
-      padding: 4px 12px;
+      padding: 3px 10px;
       border-radius: 20px;
       border: 1px solid rgba(6, 182, 212, 0.2);
     }
-    iframe {
+    .sim-iframe-container {
       width: 100%;
       height: 100%;
       border: none;
       background: #0d121f;
     }
-    .quick-links {
-      display: flex;
-      gap: 10px;
-    }
-    .admin-desktop-box {
+    .sim-desktop-box {
       width: 100%;
       max-width: 1165px;
       height: 550px;
@@ -61,7 +280,7 @@
       margin: 20px auto 40px auto;
       box-shadow: var(--shadow-lg);
     }
-    .admin-title-bar {
+    .sim-desktop-title-bar {
       background: #0f172a;
       padding: 8px 16px;
       display: flex;
@@ -70,138 +289,208 @@
       color: #9ca3af;
       font-size: 0.8rem;
     }
-    .admin-dots {
+    .sim-dots {
       display: flex;
       gap: 6px;
     }
-    .admin-dot {
+    .sim-dot {
       width: 12px;
       height: 12px;
       border-radius: 50%;
     }
-    .dot-red { background: #ef4444; }
-    .dot-yellow { background: #f59e0b; }
-    .dot-green { background: #10b981; }
-    .sim-guide {
-      max-width: 1165px;
-      margin: 0 auto 20px auto;
-      background: rgba(79, 70, 229, 0.1);
-      border: 1px solid rgba(79, 70, 229, 0.2);
-      border-radius: var(--radius-md);
-      padding: 16px;
-      font-size: 0.9rem;
-    }
-    .sim-guide h4 {
-      color: #818cf8;
-      margin-bottom: 6px;
-    }
-    .sim-guide ul {
-      margin-left: 20px;
-      color: var(--text-muted);
-    }
-    .sim-guide li {
-      margin-bottom: 4px;
+    .sim-dot-red { background: #ef4444; }
+    .sim-dot-yellow { background: #f59e0b; }
+    .sim-dot-green { background: #10b981; }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
     }
   </style>
 </head>
 <body>
-  <div class="dashboard-container">
-    <!-- Simulator Header -->
-    <header class="sim-header">
-      <div class="sim-logo">
-        ઓર્કિડ હાઇટ્સ સોસાયટી <span>સિમ્યુલેટર ડેશબોર્ડ</span>
+  <div class="main-wrapper">
+    
+    <!-- App Control Header -->
+    <header class="app-header">
+      <div class="app-title-logo">
+        🏢 ઓર્કિડ હાઇટ્સ <span>સ્માર્ટ ગેટ</span>
       </div>
-      <div class="quick-links">
-        <a href="security.html" target="_blank" class="btn btn-secondary btn-sm">સિક્યોરિટી પોર્ટલ ↗</a>
-        <a href="member.html" target="_blank" class="btn btn-secondary btn-sm">મેમ્બર પોર્ટલ ↗</a>
-        <a href="admin.html" target="_blank" class="btn btn-secondary btn-sm">એડમિન પેનલ ↗</a>
+      <div class="switch-container">
+        <span>સિમ્યુલેટર ડેમો મોડ</span>
+        <label class="switch">
+          <input type="checkbox" id="mode-toggle" onchange="toggleAppMode()">
+          <span class="slider"></span>
+        </label>
       </div>
     </header>
 
-    <!-- Simulator Body -->
-    <main class="simulator-body">
-      <!-- Simulator Guidance -->
-      <div class="sim-guide">
-        <h4>💡 ટેસ્ટિંગ ગાઈડલાઈન (સિમ્યુલેટર કેવી રીતે કામ કરે છે?):</h4>
-        <ul>
-          <li><strong>સ્ટેપ ૧:</strong> ડાબી બાજુના <strong>સિક્યોરિટી ફોન</strong>માં મુલાકાતીની વિગતો ભરો (દા.ત. ફ્લેટ <strong>A-101</strong> સિલેક્ટ કરો, નામ લખો અને ફોન નંબર દાખલ કરો).</li>
-          <li><strong>સ્ટેપ ૨:</strong> "એન્ટ્રી મોકલો" બટન દબાવો. સિમ્યુલેટર આપમેળે બાજુના ત્રણેય મેમ્બર ફોન <strong>A-101</strong> પર સ્વિચ કરશે.</li>
-          <li><strong>સ્ટેપ ૩:</strong> ત્રણેય મેમ્બર ફોનમાં <strong>મોટેથી ઘંટડી (Ringtone)</strong> વાગશે અને <strong>પોપ-અપ એલર્ટ</strong> દેખાશે.</li>
-          <li><strong>સ્ટેપ ૪:</strong> ત્રણેયમાંથી કોઈપણ એક ફોનમાં <strong>"મંજૂર કરો (Approve)"</strong> કે <strong>"ના મંજૂર (Decline)"</strong> બટન દબાવો. ઘંટડી આપોઆપ ત્રણેય ફોનમાં બંધ થઈ જશે.</li>
-          <li><strong>સ્ટેપ ૫:</strong> જો ૧૫ સેકન્ડ સુધી કોઈ મંજૂરી નહીં આપે, તો સિક્યોરિટી સ્ક્રીન પર આપમેળે મેમ્બરનો મોબાઈલ નંબર ડાયલપેડ સાથે ડિસ્પ્લે થશે.</li>
-        </ul>
+    <!-- Floating Portal Back Button -->
+    <button id="floating-back" class="floating-back-btn" style="display: none;" onclick="closePortal()">
+      🔙 રોલ બદલો (Home)
+    </button>
+
+    <!-- 1. PRODUCTION ROLE SELECTOR SCREEN -->
+    <div id="landing-portal" class="landing-screen">
+      <div class="welcome-container">
+        <span class="welcome-icon">🏢</span>
+        <h2>ઓર્કિડ હાઇટ્સ સોસાયટી</h2>
+        <p>સ્માર્ટ ગેટ અને વિઝિટર નોટિફાયર સિસ્ટમ</p>
       </div>
 
-      <!-- Mobile Device Simulator Grid -->
-      <div class="devices-wrapper">
-        <!-- Security Mobile Mockup -->
-        <div class="device-box">
-          <div class="device-title">સિક્યોરિટી ગાર્ડ ફોન</div>
+      <div class="role-grid">
+        <!-- Security Card -->
+        <div class="role-card" onclick="openPortal('security.html')">
+          <div class="role-card-icon">🛡️</div>
+          <div class="role-card-info">
+            <span class="role-card-title">સિક્યોરિટી ગાર્ડ પોર્ટલ</span>
+            <span class="role-card-desc">ગેટ પર મહેમાન એન્ટ્રી અને કન્ફર્મેશન કરવા માટે</span>
+          </div>
+          <span class="role-arrow">➔</span>
+        </div>
+
+        <!-- Resident Card -->
+        <div class="role-card" onclick="openPortal('member.html')">
+          <div class="role-card-icon">🏢</div>
+          <div class="role-card-info">
+            <span class="role-card-title">રહેવાસી લોગઇન પેનલ</span>
+            <span class="role-card-desc">અલર્ટ મેળવવા, સભ્ય અને પર્સનલ હિસ્ટ્રી ચેક કરવા</span>
+          </div>
+          <span class="role-arrow">➔</span>
+        </div>
+
+        <!-- Admin Card -->
+        <div class="role-card" onclick="openPortal('admin.html')">
+          <div class="role-card-icon">🔑</div>
+          <div class="role-card-info">
+            <span class="role-card-title">સોસાયટી એડમિન ડેસ્ક</span>
+            <span class="role-card-desc">મેમ્બર લિસ્ટ, પાસવર્ડ રીસેટ અને હેલ્પલાઇન કંટ્રોલ માટે</span>
+          </div>
+          <span class="role-arrow">➔</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. PRODUCTION FULL SCREEN VIEWPORT -->
+    <div id="portal-viewport" class="portal-viewport">
+      <iframe id="portal-iframe" class="portal-iframe-wrapper" src="about:blank"></iframe>
+    </div>
+
+    <!-- 3. DEVELOPER SIMULATOR DASHBOARD -->
+    <main id="simulator-dashboard" class="simulator-dashboard">
+      <div class="sim-devices-wrapper">
+        <!-- Security Phone -->
+        <div class="sim-device-box">
+          <div class="sim-device-title">સિક્યોરિટી ગાર્ડ ફોન</div>
           <div class="phone-mockup">
-            <iframe id="security-frame" src="security.html"></iframe>
+            <iframe id="security-frame" class="sim-iframe-container" src="security.html"></iframe>
             <div class="phone-home-indicator"></div>
           </div>
         </div>
 
-        <!-- Member Mobile 1 Mockup -->
-        <div class="device-box">
-          <div class="device-title">મેમ્બર ફોન ૧ (મુખ્ય સભ્ય)</div>
+        <!-- Member 1 -->
+        <div class="sim-device-box">
+          <div class="sim-device-title">મેમ્બર ફોન ૧ (મુખ્ય સભ્ય)</div>
           <div class="phone-mockup">
-            <iframe id="member-frame-0" src="member.html?memberIdx=0&flat=A-101"></iframe>
+            <iframe id="member-frame-0" class="sim-iframe-container" src="member.html?memberIdx=0&flat=A-101"></iframe>
             <div class="phone-home-indicator"></div>
           </div>
         </div>
 
-        <!-- Member Mobile 2 Mockup -->
-        <div class="device-box">
-          <div class="device-title">મેમ્બર ફોન ૨ (પરિવાર સભ્ય ૧)</div>
+        <!-- Member 2 -->
+        <div class="sim-device-box">
+          <div class="sim-device-title">મેમ્બર ફોન ૨ (પરિવાર સભ્ય ૧)</div>
           <div class="phone-mockup">
-            <iframe id="member-frame-1" src="member.html?memberIdx=1&flat=A-101"></iframe>
+            <iframe id="member-frame-1" class="sim-iframe-container" src="member.html?memberIdx=1&flat=A-101"></iframe>
             <div class="phone-home-indicator"></div>
           </div>
         </div>
 
-        <!-- Member Mobile 3 Mockup -->
-        <div class="device-box">
-          <div class="device-title">મેમ્બર ફોન ૩ (પરિવાર સભ્ય ૨)</div>
+        <!-- Member 3 -->
+        <div class="sim-device-box">
+          <div class="sim-device-title">મેમ્બર ફોન ૩ (પરિવાર સભ્ય ૨)</div>
           <div class="phone-mockup">
-            <iframe id="member-frame-2" src="member.html?memberIdx=2&flat=A-101"></iframe>
+            <iframe id="member-frame-2" class="sim-iframe-container" src="member.html?memberIdx=2&flat=A-101"></iframe>
             <div class="phone-home-indicator"></div>
           </div>
         </div>
       </div>
 
       <!-- Admin Desktop Mockup -->
-      <div class="device-box" style="margin-top: 40px;">
-        <div class="device-title">સોસાયટી એડમિન કંટ્રોલ ડેસ્ક (મોનિટર અને કંટ્રોલ પેનલ)</div>
-        <div class="admin-desktop-box">
-          <div class="admin-title-bar">
-            <div class="admin-dots">
-              <span class="admin-dot dot-red"></span>
-              <span class="admin-dot dot-yellow"></span>
-              <span class="admin-dot dot-green"></span>
+      <div class="sim-device-box" style="margin-top: 30px;">
+        <div class="sim-device-title">સોસાયટી એડમિન કંટ્રોલ ડેસ્ક</div>
+        <div class="sim-desktop-box">
+          <div class="sim-desktop-title-bar">
+            <div class="sim-dots">
+              <span class="sim-dot sim-dot-red"></span>
+              <span class="sim-dot sim-dot-yellow"></span>
+              <span class="sim-dot sim-dot-green"></span>
             </div>
             <div>ઓર્કિડ હાઇટ્સ - એડમિન પેનલ (ડેસ્કટોપ મોડ)</div>
             <div>https://admin.orchidheights.local</div>
           </div>
-          <iframe id="admin-frame" src="admin.html"></iframe>
+          <iframe id="admin-frame" class="sim-iframe-container" src="admin.html"></iframe>
         </div>
       </div>
     </main>
+
   </div>
 
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script src="shared.js"></script>
   <script>
-    // Listen to the sync channel.
-    // If Security Guard starts a verification for a specific flat, 
-    // automatically sync/reload the Member iframes to represent that flat 
-    // so the simulator user doesn't have to manually log in all three phones!
+    // Toggle between Single App Mode and Developer Simulator Dashboard
+    function toggleAppMode() {
+      const isSimChecked = document.getElementById('mode-toggle').checked;
+      const landing = document.getElementById('landing-portal');
+      const simulator = document.getElementById('simulator-dashboard');
+      const viewport = document.getElementById('portal-viewport');
+      const backBtn = document.getElementById('floating-back');
+
+      // Close active portal iframe
+      closePortal();
+
+      if (isSimChecked) {
+        landing.style.display = 'none';
+        viewport.style.display = 'none';
+        simulator.style.display = 'block';
+      } else {
+        simulator.style.display = 'none';
+        viewport.style.display = 'none';
+        landing.style.display = 'flex';
+      }
+    }
+
+    // Open Portal full-screen inside Production Viewport
+    function openPortal(pageUrl) {
+      const viewport = document.getElementById('portal-viewport');
+      const iframe = document.getElementById('portal-iframe');
+      const backBtn = document.getElementById('floating-back');
+
+      iframe.src = pageUrl;
+      viewport.style.display = 'block';
+      backBtn.style.display = 'flex';
+    }
+
+    // Close Portal and go back to home screen
+    function closePortal() {
+      const viewport = document.getElementById('portal-viewport');
+      const iframe = document.getElementById('portal-iframe');
+      const backBtn = document.getElementById('floating-back');
+
+      iframe.src = 'about:blank';
+      viewport.style.display = 'none';
+      backBtn.style.display = 'none';
+    }
+
+    // Simulator Sync triggers
     OrchidSync.on('VISITOR_REQUEST', (data) => {
+      const isSimChecked = document.getElementById('mode-toggle').checked;
+      if (!isSimChecked) return; // Only sync if in Simulator mode
+
       const flatNo = data.flatNo;
       console.log(`[Simulator Dashboard] Syncing Member views to Flat: ${flatNo}`);
       
-      // Update each member frame's src if it's not already showing that flat
       for (let i = 0; i < 3; i++) {
         const frame = document.getElementById(`member-frame-${i}`);
         const currentUrl = new URL(frame.src);
@@ -213,8 +502,10 @@
       }
     });
 
-    // Also listen for flat sync requests from the security guard selection
     OrchidSync.on('FLAT_SELECTED_BY_SECURITY', (data) => {
+      const isSimChecked = document.getElementById('mode-toggle').checked;
+      if (!isSimChecked) return;
+
       const flatNo = data.flatNo;
       for (let i = 0; i < 3; i++) {
         const frame = document.getElementById(`member-frame-${i}`);

@@ -66,11 +66,20 @@
 
     <!-- main Form -->
     <div id="entry-form-container">
-      <div class="form-group">
-        <label class="form-label" for="flat-select">કયા ફ્લેટમાં જવું છે? (Flat Number)</label>
-        <select id="flat-select" onchange="handleFlatChange()">
-          <!-- Populated dynamically -->
-        </select>
+      <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+        <div class="form-group" style="flex: 1; margin-bottom: 0;">
+          <label class="form-label" for="wing-select">વિંગ (Wing)</label>
+          <select id="wing-select" onchange="handleFlatChange()">
+            <option value="A" selected>વિંગ એ (A)</option>
+            <option value="B">વિંગ બી (B)</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex: 2; margin-bottom: 0;">
+          <label class="form-label" for="flat-no-select">ફ્લેટ નંબર (Flat No.)</label>
+          <select id="flat-no-select" onchange="handleFlatChange()">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
       </div>
 
       <div class="form-group">
@@ -184,39 +193,32 @@
     let countdownInterval = null;
     const TIMEOUT_SECONDS = 15;
 
-    // Load flats list and group by Wings
+    // Helper to get combined flat number
+    function getSelectedFlatNo() {
+      const wing = document.getElementById('wing-select').value;
+      const flatNoVal = document.getElementById('flat-no-select').value;
+      return `${wing}-${flatNoVal}`;
+    }
+
+    // Load flats list 101 to 1204 programmatically
     function initFlatsSelect() {
-      const select = document.getElementById('flat-select');
-      const flats = DB.getFlats();
-      
-      // Clear options
+      const select = document.getElementById('flat-no-select');
       select.innerHTML = '';
       
-      // Create groups
-      const groupA = document.createElement('optgroup');
-      groupA.label = 'વિંગ એ (Wing A)';
-      const groupB = document.createElement('optgroup');
-      groupB.label = 'વિંગ બી (Wing B)';
-      
-      Object.keys(flats).sort().forEach(flatNo => {
-        const opt = document.createElement('option');
-        opt.value = flatNo;
-        opt.textContent = flatNo;
-        
-        if (flatNo.startsWith('A')) {
-          groupA.appendChild(opt);
-        } else {
-          groupB.appendChild(opt);
+      for (let floor = 1; floor <= 12; floor++) {
+        for (let block = 1; block <= 4; block++) {
+          const num = floor * 100 + block;
+          const opt = document.createElement('option');
+          opt.value = num;
+          opt.textContent = num;
+          select.appendChild(opt);
         }
-      });
-      
-      select.appendChild(groupA);
-      select.appendChild(groupB);
+      }
     }
 
     // Notify simulator dashboard that flat selection changed
     function handleFlatChange() {
-      const flatNo = document.getElementById('flat-select').value;
+      const flatNo = getSelectedFlatNo();
       OrchidSync.send('FLAT_SELECTED_BY_SECURITY', { flatNo });
     }
 
@@ -342,7 +344,7 @@
 
     // Submit request
     function submitEntry() {
-      const flatNo = document.getElementById('flat-select').value;
+      const flatNo = getSelectedFlatNo();
       const type = document.getElementById('visitor-type').value;
       
       const visitorTypeNames = {
@@ -494,7 +496,7 @@
       
       if (activeRequestId) {
         updateVisitorStatus(activeRequestId, 'timeout');
-        const flatNo = document.getElementById('flat-select').value;
+        const flatNo = getSelectedFlatNo();
         OrchidSync.send('ALARM_STOP', { id: activeRequestId, flatNo });
       }
 
